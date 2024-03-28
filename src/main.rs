@@ -4,7 +4,7 @@
 extern crate alloc;
 use core::mem::MaybeUninit;
 use esp_backtrace as _;
-use esp_hal::{clock::ClockControl, peripherals::Peripherals, prelude::*, Delay};
+use esp_hal::{clock::ClockControl, gpio::IO, peripherals::Peripherals, prelude::*, Delay};
 use esp_println::println;
 
 use esp_wifi::{initialize, EspWifiInitFor};
@@ -46,8 +46,34 @@ fn main() -> ! {
         &clocks,
     )
     .unwrap();
+
+    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let mut led_builtin = io.pins.gpio48.into_push_pull_output();
+    let mut led_b = io.pins.gpio0.into_push_pull_output();
+    let mut led_r = io.pins.gpio45.into_push_pull_output();
+    let mut led_g = io.pins.gpio46.into_push_pull_output();
+
     loop {
         println!("Loop...");
-        delay.delay_ms(500u32);
+        led_builtin.set_high().unwrap();
+        led_r.set_low().unwrap();
+        led_g.set_high().unwrap();
+        led_b.set_high().unwrap();
+        delay.delay_ms(1000u32);
+
+        led_builtin.set_low().unwrap();
+        led_r.set_high().unwrap();
+        led_g.set_low().unwrap();
+        led_b.set_high().unwrap();
+
+        delay.delay_ms(1000u32);
+
+        led_builtin.set_high().unwrap();
+        led_r.set_high().unwrap();
+        led_g.set_high().unwrap();
+        led_b.set_low().unwrap();
+
+        delay.delay_ms(1000u32);
+        led_builtin.set_low().unwrap();
     }
 }
