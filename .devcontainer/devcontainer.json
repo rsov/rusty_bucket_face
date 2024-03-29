@@ -35,7 +35,8 @@
         "yzhang.markdown-all-in-one",
         "ms-vscode.cpptools",
         "actboy168.tasks",
-        "Wokwi.wokwi-vscode"
+        "Wokwi.wokwi-vscode",
+        "streetsidesoftware.code-spell-checker"
       ]
     }
   },

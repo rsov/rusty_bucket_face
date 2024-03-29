@@ -1,3 +1,7 @@
 {
     "rust-analyzer.check.allTargets": false,
+    "cSpell.words": [
+        "gpio",
+        "mosi"
+    ],
 }
