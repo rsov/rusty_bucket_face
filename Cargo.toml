@@ -37,6 +37,11 @@ smoltcp = { version = "0.11.0", default-features = false, features = [
     "socket-tcp",
     "socket-udp",
 ] }
+
+gc9a01-rs = { git = "https://github.com/ettoreleandrotognoli/gc9a01.git", branch = "esp32" }
+embedded-graphics = "0.8.1"
+
+
 [profile.dev]
 # Rust debug is too slow. 
 # For debug builds always builds with some optimization

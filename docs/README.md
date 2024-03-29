@@ -1,4 +1,51 @@
-# rusty_bucket_face
+# Rusty Bucket Face
+
+
+
+
+# --- DOCS ---
+
+ESP hal docs https://docs.esp-rs.org/esp-hal/esp-hal/0.16.1/esp32s3/esp_hal/
+
+
+### Display
+
+Waveshare 1.28 inch Touch LCD
+Docs https://www.waveshare.com/wiki/1.28inch_Touch_LCD
+
+
+| Type             | Data       |
+| ---------------- | ---------- |
+| Resolution       | 240x240px  |
+| LCD controller   | GC9A01     |
+| LCD interface    | 4-wire SPI |
+| Touch controller | CST816S    |
+| Touch interface  | I2C        |
+
+
+
+Connection to Arduino Nano ESP32
+
+| Display | Arduino | Color  | GPIO |
+| ------- | ------- | ------ | ---- |
+| VCC     | 3.3V    | Red    |      |
+| GND     | GND     | Black  |      |
+| MISO    | D12     | Blue   | 47   |
+| MOSI    | D11     | Yellow | 38   |
+| SCLK    | D13     | Orange | 48   |
+| LCS_CS  | D10     | Green  | 21   |
+| LCS_DC  | D7      | White  |      |
+| LCS_RST | D8      | Purple |      |
+| LCS_BL  | D9      | Brown  | 18   |
+| TP_SDA  | A4      | Grey   |      |
+| TP_SCL  | A5      | Blue   |      |
+| TP_INT  | D3      | Yellow |      |
+| TP_RST  | D4      | Purple |      |
+
+
+
+# --- END DOCS ---
+Auto generated stuff below
 
 ## Dev Containers
 This repository offers Dev Containers supports for:
