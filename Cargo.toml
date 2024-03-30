@@ -13,7 +13,7 @@ esp-backtrace = { version = "0.11.0", features = [
     "panic-handler",
     "println",
 ] }
-esp-hal = { version = "0.16.0", features = ["esp32s3"] }
+esp-hal = { version = "0.16.0", features = ["esp32s3", "eh1"] }
 esp-println = { version = "0.9.0", features = ["esp32s3", "log"] }
 log = { version = "0.4.20" }
 esp-alloc = { version = "0.3.0" }
@@ -41,6 +41,7 @@ smoltcp = { version = "0.11.0", default-features = false, features = [
 gc9a01-rs = { git = "https://github.com/ettoreleandrotognoli/gc9a01.git", branch = "esp32" }
 embedded-graphics = "0.8.1"
 u8g2-fonts = "0.4.0"
+embedded-can = "0.4.1"
 
 
 [profile.dev]

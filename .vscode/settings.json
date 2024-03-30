@@ -1,8 +1,10 @@
 {
     "rust-analyzer.check.allTargets": false,
     "cSpell.words": [
+        "BAUDRATE",
         "gpio",
         "mosi",
-        "touchpad"
+        "touchpad",
+        "twai"
     ],
 }
