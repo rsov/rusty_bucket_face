@@ -3,12 +3,9 @@
 
 extern crate alloc;
 
-use core::mem::MaybeUninit;
-use embedded_graphics::{
-    pixelcolor::Rgb565,
-    prelude::*,
-    primitives::{Circle, Primitive, PrimitiveStyleBuilder, Rectangle},
-};
+use alloc::format;
+use core::{borrow::Borrow, mem::MaybeUninit};
+use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
@@ -22,6 +19,11 @@ use esp_hal::{timer::TimerGroup, Rng};
 use esp_println::println;
 use esp_wifi::{initialize, EspWifiInitFor};
 use gc9a01::{mode::BufferedGraphics, prelude::*, Gc9a01, SPIDisplayInterface};
+use u8g2_fonts::{
+    fonts,
+    types::{FontColor, HorizontalAlignment, VerticalPosition},
+    FontRenderer,
+};
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
@@ -37,49 +39,23 @@ fn init_heap() {
 /// Test Function : will be removed later
 fn draw<I: WriteOnlyDataCommand, D: DisplayDefinition>(
     display: &mut Gc9a01<I, D, BufferedGraphics<D>>,
-    tick: u32,
+    lambda: u32,
 ) {
-    let (w, h) = display.dimensions();
-    let w = w as u32;
-    let h = h as u32;
-    let x = tick % w;
-    let y = tick % h;
+    let font = FontRenderer::new::<fonts::u8g2_font_logisoso78_tn>();
 
-    let style = PrimitiveStyleBuilder::new()
-        .stroke_width(4)
-        .stroke_color(Rgb565::new(tick as u8, x as u8, y as u8))
-        .fill_color(Rgb565::RED)
-        .build();
-
-    let cdiameter = 20;
-
-    // circle
-    Circle::new(
-        Point::new(119 - cdiameter / 2 + 40, 119 - cdiameter / 2 + 40),
-        cdiameter as u32,
+    font.render_aligned(
+        format!(
+            "{number:.precision$}",
+            precision = 3,
+            number = lambda as f32 * 0.001
+        )
+        .borrow(),
+        Point::new(4, 155), // eyeballed it
+        VerticalPosition::Baseline,
+        HorizontalAlignment::Left,
+        FontColor::Transparent(Rgb565::WHITE),
+        display,
     )
-    .into_styled(style)
-    .draw(display)
-    .unwrap();
-
-    // circle
-    Circle::new(
-        Point::new(119 - cdiameter / 2 - 40, 119 - cdiameter / 2 + 40),
-        cdiameter as u32,
-    )
-    .into_styled(style)
-    .draw(display)
-    .unwrap();
-
-    // rectangle
-    let rw = 80;
-    let rh = 20;
-    Rectangle::new(
-        Point::new(119 - rw / 2, 119 - rh / 2 - 40),
-        Size::new(rw as u32, rh as u32),
-    )
-    .into_styled(style)
-    .draw(display)
     .unwrap();
 }
 
@@ -110,9 +86,6 @@ fn main() -> ! {
     .unwrap();
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
-    let mut led_b = io.pins.gpio0.into_push_pull_output();
-    let mut led_r = io.pins.gpio45.into_push_pull_output();
-    let mut led_g = io.pins.gpio46.into_push_pull_output();
 
     io.pins.gpio18.into_push_pull_output().set_high().unwrap();
 
@@ -131,34 +104,25 @@ fn main() -> ! {
     let driver = Gc9a01::new(
         interface,
         DisplayResolution240x240,
-        DisplayRotation::Rotate0,
+        DisplayRotation::Rotate180,
     );
 
     let mut display = driver.into_buffered_graphics();
     display.init(&mut delay).ok();
-    let mut tick: u32 = 0;
+    let mut lambda: u32 = 850;
 
     loop {
-        println!("Loop... {tick}");
+        println!("Loop...");
+        if lambda >= 1200 {
+            lambda = 850;
+        } else {
+            lambda += 1;
+        }
 
         display.clear();
-        draw(&mut display, tick);
+        draw(&mut display, lambda);
         display.flush().ok();
-        tick += 1;
 
-        led_r.set_low().unwrap();
-        led_g.set_high().unwrap();
-        led_b.set_high().unwrap();
-        delay.delay_ms(1000u32);
-
-        led_r.set_high().unwrap();
-        led_g.set_low().unwrap();
-        led_b.set_high().unwrap();
-        delay.delay_ms(1000u32);
-
-        led_r.set_high().unwrap();
-        led_g.set_high().unwrap();
-        led_b.set_low().unwrap();
-        delay.delay_ms(1000u32);
+        delay.delay_ms(50u32);
     }
 }
