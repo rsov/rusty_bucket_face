@@ -15,8 +15,7 @@ use esp_hal::{
     prelude::*,
     spi::{self, master::Spi},
     timer::TimerGroup,
-    twai::{self, filter::SingleStandardFilter},
-    Delay, Rng,
+    twai, Delay, Rng,
 };
 use esp_println::println;
 use esp_wifi::{initialize, EspWifiInitFor};
@@ -124,7 +123,7 @@ fn main() -> ! {
 
     // Begin configuring the TWAI peripheral. The peripheral is in a reset like
     // state that prevents transmission but allows configuration.
-    let mut can_config = twai::TwaiConfiguration::new(
+    let can_config = twai::TwaiConfiguration::new(
         peripherals.TWAI0,
         can_tx_pin,
         can_rx_pin,
