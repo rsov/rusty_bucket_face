@@ -5,13 +5,14 @@ extern crate alloc;
 
 use alloc::format;
 use core::{borrow::Borrow, mem::MaybeUninit};
+use embassy_executor::Spawner;
 use embedded_can::nb::Can;
 use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
     gpio::IO,
-    peripherals::Peripherals,
+    peripherals::{Peripherals, TWAI0},
     prelude::*,
     spi::{self, master::Spi},
     timer::TimerGroup,
@@ -62,8 +63,19 @@ fn draw<I: WriteOnlyDataCommand, D: DisplayDefinition>(
     .unwrap();
 }
 
-#[entry]
-fn main() -> ! {
+#[embassy_executor::task]
+async fn receiver(can_config: esp_hal::twai::TwaiConfiguration<'static, TWAI0>) {
+    let mut can = can_config.start();
+
+    loop {
+        // I think the frame I will be looking is 0X470 or something like that
+        let frame = block!(can.receive()).unwrap();
+        println!("Received a frame: {frame:?}");
+    }
+}
+
+#[main]
+async fn main(spawner: Spawner) {
     init_heap();
     let peripherals = Peripherals::take();
     let system = peripherals.SYSTEM.split();
@@ -146,7 +158,7 @@ fn main() -> ! {
     // Start the peripheral. This locks the configuration settings of the peripheral
     // and puts it into operation mode, allowing packets to be sent and
     // received.
-    let mut can = can_config.start();
+    spawner.spawn(receiver(can_config)).ok();
 
     loop {
         println!("Loop...");
@@ -159,10 +171,6 @@ fn main() -> ! {
         display.clear();
         draw(&mut display, lambda);
         display.flush().ok();
-
-        // I think the frame I will be looking is 0X470 or something like that
-        let frame = block!(can.receive()).unwrap();
-        println!("Received a frame: {frame:?}");
 
         delay.delay_ms(50u32);
     }
