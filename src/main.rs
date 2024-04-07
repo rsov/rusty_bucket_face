@@ -4,15 +4,11 @@
 extern crate alloc;
 
 use alloc::format;
-use core::{borrow::Borrow, mem::MaybeUninit};
+use core::mem::MaybeUninit;
+use cstr_core::CString;
 use embassy_executor::Spawner;
 use embedded_can::nb::Can;
-use embedded_graphics::{
-    mono_font::{ascii::FONT_6X10, MonoTextStyle},
-    pixelcolor::Rgb565,
-    prelude::*,
-    text::Text,
-};
+use embedded_graphics::prelude::*;
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
@@ -21,19 +17,15 @@ use esp_hal::{
     peripherals::{Peripherals, TWAI0},
     prelude::*,
     spi::{self, master::Spi},
+    systimer::SystemTimer,
     timer::TimerGroup,
     twai, Delay, Rng,
 };
-
 use esp_println::println;
 use esp_wifi::{initialize, EspWifiInitFor};
-use gc9a01::{mode::BufferedGraphics, prelude::*, Gc9a01, SPIDisplayInterface};
+use gc9a01::{prelude::*, Gc9a01, SPIDisplayInterface};
+use lvgl::{style::Style, widgets::Label, Align, Color, Display, DrawBuffer, Part, Widget};
 use nb::block;
-use u8g2_fonts::{
-    fonts,
-    types::{FontColor, HorizontalAlignment, VerticalPosition},
-    FontRenderer,
-};
 
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
@@ -45,29 +37,6 @@ fn init_heap() {
     unsafe {
         ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
     }
-}
-
-/// Test Function : will be removed later
-fn draw<I: WriteOnlyDataCommand, D: DisplayDefinition>(
-    display: &mut Gc9a01<I, D, BufferedGraphics<D>>,
-    lambda: u32,
-) {
-    let font = FontRenderer::new::<fonts::u8g2_font_logisoso78_tn>();
-
-    font.render_aligned(
-        format!(
-            "{number:.precision$}",
-            precision = 3,
-            number = lambda as f32 * 0.001
-        )
-        .borrow(),
-        Point::new(4, 155), // eyeballed it
-        VerticalPosition::Baseline,
-        HorizontalAlignment::Left,
-        FontColor::Transparent(Rgb565::WHITE),
-        display,
-    )
-    .unwrap();
 }
 
 #[embassy_executor::task]
@@ -129,8 +98,27 @@ async fn main(spawner: Spawner) {
         DisplayRotation::Rotate180,
     );
 
-    let mut display = driver.into_buffered_graphics();
-    display.init(&mut delay).ok();
+    let mut embedded_graphics_display = driver.into_buffered_graphics();
+    embedded_graphics_display.init(&mut delay).ok();
+
+    const HOR_RES: u32 = 240;
+    const VER_RES: u32 = 240;
+
+    let buffer = DrawBuffer::<{ (HOR_RES * VER_RES) as usize }>::default();
+
+    let display = Display::register(buffer, HOR_RES, VER_RES, |refresh| {
+        embedded_graphics_display
+            .draw_iter(refresh.as_pixels())
+            .unwrap();
+    })
+    .unwrap();
+
+    let mut screen = display.get_scr_act().unwrap();
+    let mut screen_style = Style::default();
+    screen_style.set_bg_color(Color::from_rgb((0, 0, 139)));
+    screen_style.set_radius(0);
+    screen.add_style(Part::Main, &mut screen_style);
+
     let mut lambda: u32 = 850;
 
     // Set the tx pin as open drain. Skip this if using transceivers.
@@ -189,17 +177,26 @@ async fn main(spawner: Spawner) {
     delay.delay_us(100u32);
 
     loop {
-        display.clear();
+        let start = SystemTimer::now();
+
+        // Create loading label
+        let mut loading_lbl = Label::create(&mut screen).unwrap();
+        loading_lbl
+            .set_text(
+                CString::new(format!(
+                    "{number:.precision$}",
+                    precision = 3,
+                    number = lambda as f32 * 0.001
+                ))
+                .unwrap()
+                .as_c_str(),
+            )
+            .unwrap();
+        loading_lbl.set_align(Align::Center, 0, 0);
 
         let mut data = [0u8; 6];
         i2c.write_read(0x15, &[0x01], &mut data).ok();
         println!("{:?}", data);
-
-        let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
-
-        Text::new(format!("{:?}", data).borrow(), Point::new(50, 65), style)
-            .draw(&mut display)
-            .unwrap();
 
         if lambda >= 1200 {
             lambda = 850;
@@ -207,9 +204,10 @@ async fn main(spawner: Spawner) {
             lambda += 1;
         }
 
-        draw(&mut display, lambda);
-        display.flush().ok();
+        lvgl::task_handler();
 
         delay.delay_ms(50u32);
+
+        lvgl::tick_inc(core::time::Duration::from_millis(start));
     }
 }
