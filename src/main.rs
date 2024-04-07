@@ -7,17 +7,24 @@ use alloc::format;
 use core::{borrow::Borrow, mem::MaybeUninit};
 use embassy_executor::Spawner;
 use embedded_can::nb::Can;
-use embedded_graphics::{pixelcolor::Rgb565, prelude::*};
+use embedded_graphics::{
+    mono_font::{ascii::FONT_6X10, MonoTextStyle},
+    pixelcolor::Rgb565,
+    prelude::*,
+    text::Text,
+};
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
     gpio::IO,
+    i2c::I2C,
     peripherals::{Peripherals, TWAI0},
     prelude::*,
     spi::{self, master::Spi},
     timer::TimerGroup,
     twai, Delay, Rng,
 };
+
 use esp_println::println;
 use esp_wifi::{initialize, EspWifiInitFor};
 use gc9a01::{mode::BufferedGraphics, prelude::*, Gc9a01, SPIDisplayInterface};
@@ -160,15 +167,46 @@ async fn main(spawner: Spawner) {
     // received.
     spawner.spawn(receiver(can_config)).ok();
 
+    // Create a new peripheral object with the described wiring and standard
+    // I2C clock speed:
+    let mut i2c = I2C::new(
+        peripherals.I2C0,
+        io.pins.gpio11, // SDA
+        io.pins.gpio12, // SCL
+        100u32.kHz(),
+        &clocks,
+    );
+
+    let touch_int = io.pins.gpio6.into_pull_up_input().degrade();
+    let mut touch_rst = io.pins.gpio7.into_push_pull_output().degrade();
+
+    // I think this is needed to reset it?
+    touch_rst.set_low().unwrap();
+    delay.delay_us(100u32);
+    touch_rst.set_high().unwrap();
+    delay.delay_us(100u32);
+
+    delay.delay_us(100u32);
+
     loop {
-        println!("Loop...");
+        display.clear();
+
+        let mut data = [0u8; 6];
+        i2c.write_read(0x15, &[0x01], &mut data).ok();
+        println!("{:?}", data);
+
+        let style = MonoTextStyle::new(&FONT_6X10, Rgb565::WHITE);
+
+        Text::new(format!("{:?}", data).borrow(), Point::new(50, 65), style)
+            .draw(&mut display)
+            .unwrap();
+
         if lambda >= 1200 {
             lambda = 850;
         } else {
             lambda += 1;
         }
 
-        display.clear();
         draw(&mut display, lambda);
         display.flush().ok();
 
