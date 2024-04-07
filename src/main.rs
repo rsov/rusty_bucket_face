@@ -177,7 +177,7 @@ async fn main(spawner: Spawner) {
         &clocks,
     );
 
-    let touch_int = io.pins.gpio6.into_pull_up_input().degrade();
+    let _touch_int = io.pins.gpio6.into_pull_up_input().degrade();
     let mut touch_rst = io.pins.gpio7.into_push_pull_output().degrade();
 
     // I think this is needed to reset it?
