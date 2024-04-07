@@ -45,11 +45,14 @@ smoltcp = { version = "0.11.0", default-features = false, features = [
 
 gc9a01-rs = { git = "https://github.com/ettoreleandrotognoli/gc9a01.git", branch = "esp32" }
 embedded-graphics = "0.8.1"
-u8g2-fonts = "0.4.0"
 embedded-can = "0.4.1"
 embassy-executor = "0.5.0"
 embassy-time = "0.3.0"
-
+lvgl = { git = "https://github.com/lvgl/lv_binding_rust.git", default-features = false, features = [
+    "embedded_graphics",
+    "unsafe_no_autoinit",
+] }
+cstr_core = "0.2.6"
 
 [profile.dev]
 # Rust debug is too slow. 

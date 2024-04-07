@@ -11,6 +11,13 @@ ARG CONTAINER_GROUP=esp
 ARG ESP_BOARD=all
 ARG GITHUB_TOKEN
 
+# LVGL dependencies
+RUN apt-get update \
+    && apt-get install -y \
+    build-essential llvm clang libsdl2-dev gcc-multilib 
+
+ENV DEP_LV_CONFIG_PATH=/home/${CONTAINER_USER}/rusty_bucket_face/lvgl-configs
+
 # Install dependencies
 RUN apt-get update \
     && apt-get install -y git curl llvm-dev libclang-dev clang unzip \

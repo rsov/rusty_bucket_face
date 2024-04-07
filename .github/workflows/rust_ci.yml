@@ -10,6 +10,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  DEP_LV_CONFIG_PATH: /home/runner/work/rusty_bucket_face/rusty_bucket_face/lvgl-configs
 
 jobs:
   rust-checks:
