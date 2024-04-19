@@ -6,7 +6,8 @@ extern crate alloc;
 use alloc::format;
 use core::{borrow::Borrow, mem::MaybeUninit};
 use embassy_executor::Spawner;
-use embedded_can::nb::Can;
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel};
+use embedded_can::{Frame, Id};
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},
     pixelcolor::Rgb565,
@@ -16,19 +17,20 @@ use embedded_graphics::{
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
+    delay::Delay,
     gpio::IO,
     i2c::I2C,
-    peripherals::{Peripherals, TWAI0},
+    interrupt,
+    peripherals::{self, Peripherals, TWAI0},
     prelude::*,
+    rng::Rng,
     spi::{self, master::Spi},
     timer::TimerGroup,
-    twai, Delay, Rng,
+    twai::{self, EspTwaiFrame, TwaiRx},
 };
-
 use esp_println::println;
 use esp_wifi::{initialize, EspWifiInitFor};
 use gc9a01::{mode::BufferedGraphics, prelude::*, Gc9a01, SPIDisplayInterface};
-use nb::block;
 use u8g2_fonts::{
     fonts,
     types::{FontColor, HorizontalAlignment, VerticalPosition},
@@ -71,13 +73,38 @@ fn draw<I: WriteOnlyDataCommand, D: DisplayDefinition>(
 }
 
 #[embassy_executor::task]
-async fn receiver(can_config: esp_hal::twai::TwaiConfiguration<'static, TWAI0>) {
-    let mut can = can_config.start();
-
+async fn receiver(mut rx: TwaiRx<'static, TWAI0, esp_hal::Async>) -> ! {
     loop {
-        // I think the frame I will be looking is 0X470 or something like that
-        let frame = block!(can.receive()).unwrap();
-        println!("Received a frame: {frame:?}");
+        let frame = rx.receive_async().await;
+
+        match frame {
+            Ok(frame) => {
+                println!("Received a frame:");
+                print_frame(&frame);
+            }
+            Err(e) => {
+                println!("Receive error: {:?}", e);
+            }
+        }
+    }
+}
+fn print_frame(frame: &EspTwaiFrame) {
+    // Print different messages based on the frame id type.
+    match frame.id() {
+        Id::Standard(id) => {
+            println!("\tStandard Id: {:?}", id);
+        }
+        Id::Extended(id) => {
+            println!("\tExtended Id: {:?}", id);
+        }
+    }
+
+    // Print out the frame data or the requested data length code for a remote
+    // transmission request frame.
+    if frame.is_data_frame() {
+        println!("\tData: {:?}", frame.data());
+    } else {
+        println!("\tRemote Frame. Data Length Code: {}", frame.dlc());
     }
 }
 
@@ -97,7 +124,7 @@ async fn main(spawner: Spawner) {
     esp_println::logger::init_logger_from_env();
     log::info!("Logger is setup");
     println!("Hello world!");
-    let timer = TimerGroup::new(peripherals.TIMG1, &clocks).timer0;
+    let timer = TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
     let _init = initialize(
         EspWifiInitFor::Wifi,
         timer,
@@ -109,7 +136,7 @@ async fn main(spawner: Spawner) {
 
     let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
 
-    io.pins.gpio18.into_push_pull_output().set_high().unwrap();
+    io.pins.gpio18.into_push_pull_output().set_high();
 
     let sck = io.pins.gpio48;
     let mosi = io.pins.gpio38;
@@ -142,7 +169,7 @@ async fn main(spawner: Spawner) {
 
     // Begin configuring the TWAI peripheral. The peripheral is in a reset like
     // state that prevents transmission but allows configuration.
-    let can_config = twai::TwaiConfiguration::new(
+    let can_config = twai::TwaiConfiguration::new_async(
         peripherals.TWAI0,
         can_tx_pin,
         can_rx_pin,
@@ -150,22 +177,16 @@ async fn main(spawner: Spawner) {
         CAN_BAUDRATE,
     );
 
-    // Partially filter the incoming messages to reduce overhead of receiving
-    // undesired messages. Note that due to how the hardware filters messages,
-    // standard ids and extended ids may both match a filter. Frame ids should
-    // be explicitly checked in the application instead of fully relying on
-    // these partial acceptance filters to exactly match.
-    // A filter that matches StandardId::ZERO.
+    let can = can_config.start();
+    let (_tx, rx) = can.split();
 
-    // TODO: Uncomment this once we know the frames we're looking for
-    // const FILTER: SingleStandardFilter =
-    //     SingleStandardFilter::new(b"00000000000", b"x", [b"xxxxxxxx", b"xxxxxxxx"]);
-    // can_config.set_filter(FILTER);
+    interrupt::enable(
+        peripherals::Interrupt::TWAI0,
+        interrupt::Priority::Priority1,
+    )
+    .unwrap();
 
-    // Start the peripheral. This locks the configuration settings of the peripheral
-    // and puts it into operation mode, allowing packets to be sent and
-    // received.
-    spawner.spawn(receiver(can_config)).ok();
+    spawner.spawn(receiver(rx)).ok();
 
     // Create a new peripheral object with the described wiring and standard
     // I2C clock speed:
@@ -175,18 +196,17 @@ async fn main(spawner: Spawner) {
         io.pins.gpio12, // SCL
         100u32.kHz(),
         &clocks,
+        None,
     );
 
     let _touch_int = io.pins.gpio6.into_pull_up_input().degrade();
     let mut touch_rst = io.pins.gpio7.into_push_pull_output().degrade();
 
     // I think this is needed to reset it?
-    touch_rst.set_low().unwrap();
-    delay.delay_us(100u32);
-    touch_rst.set_high().unwrap();
-    delay.delay_us(100u32);
-
-    delay.delay_us(100u32);
+    touch_rst.set_low();
+    delay.delay_millis(100u32);
+    touch_rst.set_high();
+    delay.delay_millis(100u32);
 
     loop {
         display.clear();
@@ -210,6 +230,6 @@ async fn main(spawner: Spawner) {
         draw(&mut display, lambda);
         display.flush().ok();
 
-        delay.delay_ms(50u32);
+        delay.delay_millis(50u32);
     }
 }
