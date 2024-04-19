@@ -6,7 +6,6 @@ extern crate alloc;
 use alloc::format;
 use core::{borrow::Borrow, mem::MaybeUninit};
 use embassy_executor::Spawner;
-use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel};
 use embedded_can::{Frame, Id};
 use embedded_graphics::{
     mono_font::{ascii::FONT_6X10, MonoTextStyle},

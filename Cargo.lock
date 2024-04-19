@@ -1044,7 +1044,6 @@ name = "rusty-bucket-face"
 version = "0.1.0"
 dependencies = [
  "embassy-executor",
- "embassy-sync",
  "embassy-time",
  "embedded-can",
  "embedded-graphics",
