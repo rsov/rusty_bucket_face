@@ -1,16 +1,24 @@
 {
     "version": 1,
-    "editor": "wokwi",
     "author": "Ruslan Sovinskyy <ruslan.sovinskyy@gmail.com>",
+    "editor": "wokwi",
     "parts": [
         {
             "type": "board-esp32-s3-devkitc-1",
             "id": "esp",
-            "top": 0.59,
-            "left": 0.67,
+            "top": -211.38,
+            "left": -245.03,
             "attrs": {
                 "flashSize": "16"
             }
+        },
+        {
+            "type": "board-ili9341-cap-touch",
+            "id": "lcd1",
+            "top": -222.08,
+            "left": 4.74,
+            "rotate": 90,
+            "attrs": {}
         }
     ],
     "connections": [
@@ -25,10 +33,91 @@
             "$serialMonitor:TX",
             "",
             []
+        ],
+        [
+            "esp:3V3.1",
+            "lcd1:VCC",
+            "red",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "esp:GND.2",
+            "lcd1:GND",
+            "black",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "esp:47",
+            "lcd1:MISO",
+            "blue",
+            [
+                "v0"
+            ]
+        ],
+        [
+            "esp:38",
+            "lcd1:MOSI",
+            "gold",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:48",
+            "lcd1:SCK",
+            "orange",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:21",
+            "lcd1:CS",
+            "green",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:10",
+            "lcd1:D/C",
+            "white",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:11",
+            "lcd1:SDA",
+            "gray",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:12",
+            "lcd1:SCL",
+            "blue",
+            [
+                "h0"
+            ]
+        ],
+        [
+            "esp:6",
+            "lcd1:RST",
+            "purple",
+            [
+                "h0"
+            ]
         ]
     ],
     "serialMonitor": {
         "display": "terminal",
         "convertEol": true
-    }
+    },
+    "dependencies": {}
 }
