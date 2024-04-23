@@ -13,6 +13,7 @@ use embedded_graphics::{
     prelude::*,
     text::Text,
 };
+use embedded_hal_bus::spi::{ExclusiveDevice, NoDelay};
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
@@ -147,7 +148,9 @@ async fn main(spawner: Spawner) {
         .with_sck(sck)
         .with_mosi(mosi);
 
-    let interface = SPIDisplayInterface::new(spi, dc_output, cs_output);
+    let spi_device = ExclusiveDevice::new(spi, cs_output, NoDelay);
+
+    let interface = SPIDisplayInterface::new(spi_device, dc_output);
 
     let driver = Gc9a01::new(
         interface,
