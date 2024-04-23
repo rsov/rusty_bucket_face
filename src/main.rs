@@ -149,7 +149,6 @@ async fn main(spawner: Spawner) {
         .with_mosi(mosi);
 
     let spi_device = ExclusiveDevice::new(spi, cs_output, NoDelay);
-
     let interface = SPIDisplayInterface::new(spi_device, dc_output);
 
     let driver = Gc9a01::new(
