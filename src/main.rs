@@ -154,7 +154,6 @@ async fn main(spawner: Spawner) {
 
     let spi_bus = RefCell::new(spi);
     let spi_device = RefCellDevice::new_no_delay(&spi_bus, cs_output).unwrap();
-    // let spi_device = ExclusiveDevice::new(&spi_bus, cs_output, NoDelay).unwrap();
     let interface = SPIDisplayInterface::new(spi_device, dc_output);
 
     let driver = Gc9a01::new(
