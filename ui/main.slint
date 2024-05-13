@@ -1,0 +1,16 @@
+import { AboutSlint, Button, VerticalBox } from "std-widgets.slint";
+export component Demo {
+    in-out property <string> greeting <=> label.text;
+    VerticalBox {
+        alignment: start;
+        label := Text {
+            text: "Hello World!";
+            font-size: 24px;
+            horizontal-alignment: center;
+        }
+        AboutSlint {
+            preferred-height: 150px;
+        }
+        HorizontalLayout { alignment: center; Button { text: "OK!"; } }
+    }
+}

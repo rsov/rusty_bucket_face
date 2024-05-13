@@ -4,7 +4,7 @@
 extern crate alloc;
 
 use alloc::format;
-use core::{borrow::Borrow, mem::MaybeUninit};
+use core::{borrow::Borrow, cell::RefCell, mem::MaybeUninit};
 use embassy_executor::Spawner;
 use embedded_can::{Frame, Id};
 use embedded_graphics::{
@@ -13,12 +13,12 @@ use embedded_graphics::{
     prelude::*,
     text::Text,
 };
-use embedded_hal_bus::spi::{ExclusiveDevice, NoDelay};
+use embedded_hal_bus::spi::RefCellDevice;
 use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
     delay::Delay,
-    gpio::IO,
+    gpio::{self, IO},
     i2c::I2C,
     interrupt,
     peripherals::{self, Peripherals, TWAI0},
@@ -140,15 +140,21 @@ async fn main(spawner: Spawner) {
 
     let sck = io.pins.gpio48;
     let mosi = io.pins.gpio38;
+    let miso = io.pins.gpio47;
 
     let cs_output = io.pins.gpio21.into_push_pull_output();
     let dc_output = io.pins.gpio10.into_push_pull_output();
 
-    let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0, &clocks)
-        .with_sck(sck)
-        .with_mosi(mosi);
+    let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0, &clocks).with_pins(
+        Some(sck),
+        Some(mosi),
+        Some(miso),
+        gpio::NO_PIN,
+    );
 
-    let spi_device = ExclusiveDevice::new(spi, cs_output, NoDelay);
+    let spi_bus = RefCell::new(spi);
+    let spi_device = RefCellDevice::new_no_delay(&spi_bus, cs_output).unwrap();
+    // let spi_device = ExclusiveDevice::new(&spi_bus, cs_output, NoDelay).unwrap();
     let interface = SPIDisplayInterface::new(spi_device, dc_output);
 
     let driver = Gc9a01::new(
