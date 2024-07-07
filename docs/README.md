@@ -5,7 +5,7 @@
 
 # --- DOCS ---
 
-ESP hal docs https://docs.esp-rs.org/esp-hal/esp-hal/0.16.1/esp32s3/esp_hal/
+ESP hal docs https://docs.esp-rs.org/esp-hal/
 
 
 ### Display

@@ -18,18 +18,16 @@ use esp_backtrace as _;
 use esp_hal::{
     clock::ClockControl,
     delay::Delay,
-    gpio::{self, IO},
+    gpio::{self, Input, Io, Output, Pull},
     i2c::I2C,
     interrupt,
     peripherals::{self, Peripherals, TWAI0},
     prelude::*,
-    rng::Rng,
     spi::{self, master::Spi},
-    timer::TimerGroup,
+    system::SystemControl,
     twai::{self, EspTwaiFrame, TwaiRx},
 };
 use esp_println::println;
-use esp_wifi::{initialize, EspWifiInitFor};
 use gc9a01::{mode::BufferedGraphics, prelude::*, Gc9a01, SPIDisplayInterface};
 use u8g2_fonts::{
     fonts,
@@ -112,7 +110,7 @@ fn print_frame(frame: &EspTwaiFrame) {
 async fn main(spawner: Spawner) {
     init_heap();
     let peripherals = Peripherals::take();
-    let system = peripherals.SYSTEM.split();
+    let system = SystemControl::new(peripherals.SYSTEM);
 
     let clocks = ClockControl::max(system.clock_control).freeze();
     let mut delay = Delay::new(&clocks);
@@ -124,26 +122,26 @@ async fn main(spawner: Spawner) {
     esp_println::logger::init_logger_from_env();
     log::info!("Logger is setup");
     println!("Hello world!");
-    let timer = TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
-    let _init = initialize(
-        EspWifiInitFor::Wifi,
+    let timer = esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
+    let _init = esp_wifi::initialize(
+        esp_wifi::EspWifiInitFor::Wifi,
         timer,
-        Rng::new(peripherals.RNG),
-        system.radio_clock_control,
+        esp_hal::rng::Rng::new(peripherals.RNG),
+        peripherals.RADIO_CLK,
         &clocks,
     )
     .unwrap();
 
-    let io = IO::new(peripherals.GPIO, peripherals.IO_MUX);
+    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
 
-    io.pins.gpio18.into_push_pull_output().set_high();
+    Output::new(io.pins.gpio18, gpio::Level::High);
 
     let sck = io.pins.gpio48;
     let mosi = io.pins.gpio38;
     let miso = io.pins.gpio47;
 
-    let cs_output = io.pins.gpio21.into_push_pull_output();
-    let dc_output = io.pins.gpio10.into_push_pull_output();
+    let cs_output = Output::new(io.pins.gpio21, gpio::Level::Low);
+    let dc_output = Output::new(io.pins.gpio10, gpio::Level::Low);
 
     let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0, &clocks).with_pins(
         Some(sck),
@@ -167,7 +165,7 @@ async fn main(spawner: Spawner) {
     let mut lambda: u32 = 850;
 
     // Set the tx pin as open drain. Skip this if using transceivers.
-    let can_tx_pin = io.pins.gpio0.into_open_drain_output();
+    let can_tx_pin = io.pins.gpio0;
     let can_rx_pin = io.pins.gpio2;
 
     // The speed of the CAN bus.
@@ -175,7 +173,7 @@ async fn main(spawner: Spawner) {
 
     // Begin configuring the TWAI peripheral. The peripheral is in a reset like
     // state that prevents transmission but allows configuration.
-    let can_config = twai::TwaiConfiguration::new_async(
+    let can_config = twai::TwaiConfiguration::new_async_no_transceiver(
         peripherals.TWAI0,
         can_tx_pin,
         can_rx_pin,
@@ -205,11 +203,10 @@ async fn main(spawner: Spawner) {
         None,
     );
 
-    let _touch_int = io.pins.gpio6.into_pull_up_input().degrade();
-    let mut touch_rst = io.pins.gpio7.into_push_pull_output().degrade();
+    let _touch_int = Input::new(io.pins.gpio6, Pull::Up);
+    let mut touch_rst = Output::new(io.pins.gpio7, gpio::Level::Low);
 
     // I think this is needed to reset it?
-    touch_rst.set_low();
     delay.delay_millis(100u32);
     touch_rst.set_high();
     delay.delay_millis(100u32);
