@@ -7,13 +7,13 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-esp-backtrace = { version = "0.12.1", features = [
+esp-backtrace = { version = "0.13.0", features = [
     "esp32s3",
     "exception-handler",
     "panic-handler",
     "println",
 ] }
-esp-hal = { version = "0.18.0", features = [
+esp-hal = { version = "0.19.0", features = [
     "log",
     "esp32s3",
     "embedded-hal",
@@ -21,16 +21,16 @@ esp-hal = { version = "0.18.0", features = [
     # async / embassy
     "async",
 ] }
-esp-hal-embassy = { version = "0.1.0", features = [
+esp-hal-embassy = { version = "0.2.0", features = [
     "esp32s3",
-    "time-systimer-16mhz",
+    # "time-systimer-16mhz",
 ] }
-esp-println = { version = "0.9.1", features = ["esp32s3", "log"] }
+esp-println = { version = "0.10.0", features = ["esp32s3", "log"] }
 log = { version = "0.4.21" }
 esp-alloc = { version = "0.4.0" }
 embedded-svc = { version = "0.28.0", default-features = false, features = [] }
 embedded-io = "0.6.1"
-esp-wifi = { version = "0.6.0", features = [
+esp-wifi = { version = "0.7.1", features = [
     "esp32s3",
     "phy-enable-usb",
     "utils",

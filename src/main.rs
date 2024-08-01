@@ -122,7 +122,11 @@ async fn main(spawner: Spawner) {
     esp_println::logger::init_logger_from_env();
     log::info!("Logger is setup");
     println!("Hello world!");
-    let timer = esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG1, &clocks, None).timer0;
+    let timer = esp_hal::timer::PeriodicTimer::new(
+        esp_hal::timer::timg::TimerGroup::new(peripherals.TIMG1, &clocks, None)
+            .timer0
+            .into(),
+    );
     let _init = esp_wifi::initialize(
         esp_wifi::EspWifiInitFor::Wifi,
         timer,
