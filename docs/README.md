@@ -35,7 +35,7 @@ Connection to Arduino Nano ESP32
 | SCLK    | D13     | Orange | 48   |
 | LCS_CS  | D10     | Green  | 21   |
 | LCS_DC  | D7      | White  | 10   |
-| LCS_RST | D8      | Purple |      |
+| LCS_RST | D8      | Purple | 17   |
 | LCS_BL  | D9      | Brown  | 18   |
 | TP_SDA  | A4      | Grey   | 11   |
 | TP_SCL  | A5      | Blue   | 12   |
