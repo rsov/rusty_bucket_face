@@ -1,5 +1,5 @@
 import { AboutSlint, Button, VerticalBox } from "std-widgets.slint";
-export component Demo {
+export component MainWindow inherits Window  {
     in-out property <string> greeting <=> label.text;
     VerticalBox {
         alignment: start;
