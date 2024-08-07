@@ -7,6 +7,7 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
+gc9a01-rs = "0.2.1"
 esp-backtrace = { version = "0.13.0", features = [
     "esp32s3",
     "exception-handler",
@@ -48,7 +49,6 @@ smoltcp = { version = "0.11.0", default-features = false, features = [
     "socket-tcp",
     "socket-udp",
 ] }
-gc9a01-rs = "0.2.1"
 embedded-graphics = "0.8.1"
 u8g2-fonts = "0.4.0"
 embedded-can = "0.4.1"
@@ -56,6 +56,14 @@ embassy-executor = "0.5.0"
 embassy-time = "0.3.0"
 embedded-hal = "1.0.0"
 embedded-hal-bus = "0.2.0"
+slint = { version = "1.7.0", default-features = false, features = [
+    "compat-1-2",
+    "unsafe-single-threaded",
+    "libm",
+    "renderer-software",
+] }
+embedded-graphics-core = "0.4.0"
+embedded-graphics-framebuf = "0.5.0"
 
 [profile.dev]
 # Rust debug is too slow.
@@ -70,3 +78,6 @@ incremental = false
 lto = 'fat'
 opt-level = 's'
 overflow-checks = false
+
+[build-dependencies]
+slint-build = "1.7.0"
