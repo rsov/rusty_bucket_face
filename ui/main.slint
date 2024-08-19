@@ -1,16 +1,33 @@
-import { AboutSlint, Button, VerticalBox } from "std-widgets.slint";
-export component MainWindow inherits Window  {
-    in-out property <string> greeting <=> label.text;
-    VerticalBox {
-        alignment: start;
-        label := Text {
-            text: "Hello World!";
-            font-size: 24px;
-            horizontal-alignment: center;
+import { AboutSlint, Button, VerticalBox, Palette } from "std-widgets.slint";
+export component AppWindow inherits Window {
+
+    Rectangle {
+        width: 240px;
+        height: 240px;
+        border-radius: 240px / 2;
+        background: black;
+
+        VerticalBox {
+            padding-top: 24px;
+            alignment: start;
+            label := Text {
+                text: "Hello World!";
+                font-size: 24px;
+                horizontal-alignment: center;
+            }
+
+            AboutSlint {
+                preferred-height: 150px;
+            }
+
+            HorizontalLayout {
+                Rectangle {
+                    background: red;
+                    Button {
+                        text: "OK!";
+                    }
+                }
+            }
         }
-        AboutSlint {
-            preferred-height: 150px;
-        }
-        HorizontalLayout { alignment: center; Button { text: "OK!"; } }
     }
 }

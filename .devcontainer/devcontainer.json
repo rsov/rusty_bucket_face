@@ -36,7 +36,8 @@
         "ms-vscode.cpptools",
         "actboy168.tasks",
         "Wokwi.wokwi-vscode",
-        "streetsidesoftware.code-spell-checker"
+        "streetsidesoftware.code-spell-checker",
+        "Slint.slint"
       ]
     }
   },

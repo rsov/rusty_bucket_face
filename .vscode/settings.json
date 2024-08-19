@@ -4,7 +4,10 @@
         "BAUDRATE",
         "gpio",
         "mosi",
+        "pixelcolor",
+        "slint",
         "touchpad",
-        "twai"
+        "twai",
+        "uninit"
     ],
 }
