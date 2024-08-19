@@ -44,7 +44,7 @@ fn main() -> ! {
     slint::platform::set_platform(Box::new(EspBackend { window })).unwrap();
 
     AppWindow::new().unwrap().run().unwrap();
-    loop {}
+    panic!()
 }
 
 struct EspBackend {
