@@ -7,6 +7,7 @@
         "pixelcolor",
         "slint",
         "touchpad",
-        "twai"
+        "twai",
+        "uninit"
     ],
 }
