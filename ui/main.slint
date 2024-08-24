@@ -3,6 +3,8 @@ import { DisplayLimits, AppFonts } from "./common.slint";
 import { O2Page } from "o2_page.slint";
 
 export component AppWindow inherits Window {
+    in-out property <string> o2-lambda-reading: "1.000";
+
     width: 240px;
     height: 240px;
     padding: 0;
@@ -16,7 +18,9 @@ export component AppWindow inherits Window {
             padding: 0;
             alignment: center;
 
-            O2Page { }
+            O2Page {
+                o2-lambda-reading: root.o2-lambda-reading;
+            }
         }
     }
 }

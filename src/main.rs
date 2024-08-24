@@ -29,8 +29,12 @@ slint::include_modules!();
 #[global_allocator]
 static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
+const WINDOW_WIDTH: i32 = 240;
+const WINDOW_HEIGHT: i32 = 240;
+
 #[entry]
 fn main() -> ! {
+    // ------------------------ MCU SET UP ------------------------
     const HEAP_SIZE: usize = 32 * 1024;
     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
 
@@ -38,13 +42,128 @@ fn main() -> ! {
         ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
     }
 
+    let peripherals = Peripherals::take();
+    let system = SystemControl::new(peripherals.SYSTEM);
+
+    let clocks = ClockControl::max(system.clock_control).freeze();
+    let mut delay = Delay::new(&clocks);
+
+    // setup logger
+    // To change the log_level change the env section in .cargo/config.toml
+    // or remove it and set ESP_LOGLEVEL manually before running cargo run
+    // this requires a clean rebuild because of https://github.com/rust-lang/cargo/issues/10358
+    esp_println::logger::init_logger_from_env();
+    log::info!("Logger is setup");
+    println!("Hello world!");
+
+    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
+
+    // ------------------------ DISPLAY SET UP ------------------------
+    Output::new(io.pins.gpio18, gpio::Level::High);
+
+    let sck = io.pins.gpio48;
+    let mosi = io.pins.gpio38;
+    let miso = io.pins.gpio47;
+
+    let cs_output = Output::new(io.pins.gpio21, gpio::Level::Low);
+    let dc_output = Output::new(io.pins.gpio10, gpio::Level::Low);
+    let mut led_reset = Output::new(io.pins.gpio17, gpio::Level::Low);
+
+    let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0, &clocks).with_pins(
+        Some(sck),
+        Some(mosi),
+        Some(miso),
+        gpio::NO_PIN,
+    );
+
+    let spi_bus = RefCell::new(spi);
+    let spi_device = RefCellDevice::new_no_delay(&spi_bus, cs_output).unwrap();
+    let interface = SPIDisplayInterface::new(spi_device, dc_output);
+
+    let driver = Gc9a01::new(
+        interface,
+        DisplayResolution240x240,
+        DisplayRotation::Rotate0,
+    );
+
+    let mut display = driver.into_buffered_graphics();
+
+    display.clear_fit().unwrap();
+    display.reset(&mut led_reset, &mut delay).unwrap();
+    display.init(&mut delay).unwrap();
+    display.flush().unwrap();
+
+    // ------------------------ TOUCH PAD SET UP ------------------------
+
+    // Create a new peripheral object with the described wiring and standard
+    // I2C clock speed:
+    let i2c = I2C::new(
+        peripherals.I2C0,
+        io.pins.gpio11, // SDA
+        io.pins.gpio12, // SCL
+        100u32.kHz(),
+        &clocks,
+        None,
+    );
+    let touch_int = Input::new(io.pins.gpio6, Pull::Up);
+    let touch_rst = Output::new(io.pins.gpio7, gpio::Level::Low);
+
+    let mut touchpad = cst816s::CST816S::new(i2c, touch_int, touch_rst);
+    touchpad.setup(&mut delay).unwrap();
+
+    // ------------------------ SLINT SET UP ------------------------
+
     let window = MinimalSoftwareWindow::new(Default::default());
-    window.set_size(slint::PhysicalSize::new(240, 240));
+    window.set_size(slint::PhysicalSize::new(
+        WINDOW_WIDTH as _,
+        WINDOW_WIDTH as _,
+    ));
 
-    slint::platform::set_platform(Box::new(EspBackend { window })).unwrap();
+    slint::platform::set_platform(Box::new(EspBackend {
+        window: window.clone(),
+    }))
+    .unwrap();
 
-    AppWindow::new().unwrap().run().unwrap();
-    panic!()
+    let mut draw_buffer = DrawBuffer {
+        display,
+        buffer: &mut [slint::platform::software_renderer::Rgb565Pixel(0); WINDOW_WIDTH as usize],
+    };
+
+    let app_window = AppWindow::new().unwrap();
+
+    app_window.set_o2_lambda_reading("0.950".into());
+
+    loop {
+        slint::platform::update_timers_and_animations();
+
+        if let Some(evt) = touchpad.read_one_touch_event(true) {
+            // TODO: Sync with rotation of the screen, subtraction is a hack
+            // dunno if height of width should be used here
+            let position = slint::LogicalPosition::new(evt.x as _, (WINDOW_HEIGHT - evt.y) as _);
+
+            if evt.action == 0 {
+                window.dispatch_event(slint::platform::WindowEvent::PointerPressed {
+                    position,
+                    button: PointerEventButton::Left,
+                });
+            } else if evt.action == 2 {
+                window.dispatch_event(slint::platform::WindowEvent::PointerMoved { position });
+            } else if evt.action == 1 {
+                window.dispatch_event(slint::platform::WindowEvent::PointerReleased {
+                    position,
+                    button: PointerEventButton::Left,
+                });
+            }
+        }
+
+        window.draw_if_needed(|renderer| {
+            renderer.render_by_line(&mut draw_buffer);
+        });
+
+        if window.has_active_animations() {
+            continue;
+        }
+    }
 }
 
 struct EspBackend {
@@ -62,112 +181,6 @@ impl slint::platform::Platform for EspBackend {
         core::time::Duration::from_millis(
             SystemTimer::now() / (SystemTimer::TICKS_PER_SECOND / 1000),
         )
-    }
-
-    fn run_event_loop(&self) -> Result<(), slint::PlatformError> {
-        let peripherals = Peripherals::take();
-        let system = SystemControl::new(peripherals.SYSTEM);
-
-        let clocks = ClockControl::max(system.clock_control).freeze();
-        let mut delay = Delay::new(&clocks);
-
-        // setup logger
-        // To change the log_level change the env section in .cargo/config.toml
-        // or remove it and set ESP_LOGLEVEL manually before running cargo run
-        // this requires a clean rebuild because of https://github.com/rust-lang/cargo/issues/10358
-        esp_println::logger::init_logger_from_env();
-        log::info!("Logger is setup");
-        println!("Hello world!");
-
-        let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
-
-        Output::new(io.pins.gpio18, gpio::Level::High);
-
-        let sck = io.pins.gpio48;
-        let mosi = io.pins.gpio38;
-        let miso = io.pins.gpio47;
-
-        let cs_output = Output::new(io.pins.gpio21, gpio::Level::Low);
-        let dc_output = Output::new(io.pins.gpio10, gpio::Level::Low);
-        let mut led_reset = Output::new(io.pins.gpio17, gpio::Level::Low);
-
-        let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0, &clocks).with_pins(
-            Some(sck),
-            Some(mosi),
-            Some(miso),
-            gpio::NO_PIN,
-        );
-
-        let spi_bus = RefCell::new(spi);
-        let spi_device = RefCellDevice::new_no_delay(&spi_bus, cs_output).unwrap();
-        let interface = SPIDisplayInterface::new(spi_device, dc_output);
-
-        let driver = Gc9a01::new(
-            interface,
-            DisplayResolution240x240,
-            DisplayRotation::Rotate0,
-        );
-
-        let mut display = driver.into_buffered_graphics();
-
-        display.clear_fit().unwrap();
-        display.reset(&mut led_reset, &mut delay).unwrap();
-        display.init(&mut delay).unwrap();
-        display.flush().unwrap();
-
-        let mut draw_buffer = DrawBuffer {
-            display,
-            buffer: &mut [slint::platform::software_renderer::Rgb565Pixel(0); 240],
-        };
-
-        // Create a new peripheral object with the described wiring and standard
-        // I2C clock speed:
-        let i2c = I2C::new(
-            peripherals.I2C0,
-            io.pins.gpio11, // SDA
-            io.pins.gpio12, // SCL
-            100u32.kHz(),
-            &clocks,
-            None,
-        );
-        let touch_int = Input::new(io.pins.gpio6, Pull::Up);
-        let touch_rst = Output::new(io.pins.gpio7, gpio::Level::Low);
-
-        let mut touchpad = cst816s::CST816S::new(i2c, touch_int, touch_rst);
-        touchpad.setup(&mut delay).unwrap();
-
-        loop {
-            slint::platform::update_timers_and_animations();
-            if let Some(evt) = touchpad.read_one_touch_event(true) {
-                // TODO: Sync with rotation of the screen, subtraction is a hack
-                let position = slint::LogicalPosition::new(evt.x as _, (240 - evt.y) as _);
-
-                if evt.action == 0 {
-                    self.window
-                        .dispatch_event(slint::platform::WindowEvent::PointerPressed {
-                            position,
-                            button: PointerEventButton::Left,
-                        });
-                } else if evt.action == 2 {
-                    self.window
-                        .dispatch_event(slint::platform::WindowEvent::PointerMoved { position });
-                } else if evt.action == 1 {
-                    self.window
-                        .dispatch_event(slint::platform::WindowEvent::PointerReleased {
-                            position,
-                            button: PointerEventButton::Left,
-                        });
-                }
-            }
-
-            self.window.draw_if_needed(|renderer| {
-                renderer.render_by_line(&mut draw_buffer);
-            });
-
-            if self.window.has_active_animations() {
-                continue;
-            }
-        }
     }
 }
 
