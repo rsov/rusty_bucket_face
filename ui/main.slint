@@ -1,33 +1,22 @@
-import { AboutSlint, Button, VerticalBox, Palette } from "std-widgets.slint";
+import { AboutSlint, Button, VerticalBox, Palette, ScrollView, HorizontalBox } from "std-widgets.slint";
+import { DisplayLimits, AppFonts } from "./common.slint";
+import { O2Page } from "o2_page.slint";
+
 export component AppWindow inherits Window {
+    width: 240px;
+    height: 240px;
+    padding: 0;
 
-    Rectangle {
-        width: 240px;
-        height: 240px;
-        border-radius: 240px / 2;
-        background: black;
+    Image {
+        source: @image-url("./assets/background_1.jpg");
+    }
 
+    DisplayLimits {
         VerticalBox {
-            padding-top: 24px;
-            alignment: start;
-            label := Text {
-                text: "Hello World!";
-                font-size: 24px;
-                horizontal-alignment: center;
-            }
+            padding: 0;
+            alignment: center;
 
-            AboutSlint {
-                preferred-height: 150px;
-            }
-
-            HorizontalLayout {
-                Rectangle {
-                    background: red;
-                    Button {
-                        text: "OK!";
-                    }
-                }
-            }
+            O2Page { }
         }
     }
 }

@@ -1,0 +1,32 @@
+import { AboutSlint, Button, VerticalBox, Palette, Spinner, HorizontalBox } from "std-widgets.slint";
+import { AppFonts, DisplayLimits } from "./common.slint";
+
+export component O2Page inherits Window {
+    in property <string> o2-lambda-reading: "1.000";
+
+    VerticalBox {
+        alignment: center;
+        padding: 0;
+
+        HorizontalBox {
+            padding-right: 16px;
+            alignment: end;
+
+            Text {
+                text: root.o2-lambda-reading;
+                vertical-alignment: bottom;
+                horizontal-alignment: right;
+                font-family: AppFonts.gauges-font-name;
+                font-size: 100px;
+                height: 100%;
+            }
+
+            Text {
+                text: "λ";
+                vertical-alignment: bottom;
+                font-size: 42px;
+                height: 100%;
+            }
+        }
+    }
+}

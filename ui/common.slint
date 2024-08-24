@@ -1,0 +1,22 @@
+import { AboutSlint, Button, VerticalBox, Palette } from "std-widgets.slint";
+
+import "./assets/Open_24_Display_St.ttf";
+
+export global AppFonts {
+    out property <length> gauges-font-size: 10pt;
+
+    out property <string> gauges-font-name: "Open 24 Display St";
+}
+
+export component DisplayLimits inherits Rectangle {
+    Rectangle {
+        width: 240px;
+        height: 240px;
+
+        border-radius: 240px / 2;
+        border-color: black;
+        border-width: 1px;
+
+        @children
+    }
+}

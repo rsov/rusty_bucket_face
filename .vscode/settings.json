@@ -10,4 +10,7 @@
         "twai",
         "uninit"
     ],
+    "cSpell.enableFiletypes": [
+        "slint"
+    ],
 }
