@@ -1,10 +1,10 @@
-import { AboutSlint, Button, VerticalBox, Palette, Spinner, HorizontalBox } from "std-widgets.slint";
+import { AboutSlint, Button, VerticalBox, Palette, Spinner, HorizontalBox, ProgressIndicator } from "std-widgets.slint";
 import { AppFonts, DisplayLimits } from "./common.slint";
 
 export component O2Page inherits Window {
     in property <float> o2-lambda-reading: 1.000;
-    in property <float> min-o2-lambda: 0.500;
-    in property <float> max-o2-lambda: 1.600;
+    in property <float> min-o2-lambda: 0.700;
+    in property <float> max-o2-lambda: 1.200;
 
     pure function is-error(reading: string) -> bool {
         if (o2-lambda-reading > max-o2-lambda) {
@@ -15,9 +15,20 @@ export component O2Page inherits Window {
         return false;
     }
 
+    pure function percent-progress(reading: float) -> float {
+        if (reading > max-o2-lambda) {
+            return 1;
+        } else if (reading < min-o2-lambda) {
+            return 0;
+        }
+        return ((reading - min-o2-lambda) / (max-o2-lambda - min-o2-lambda));
+    }
+
     VerticalBox {
-        alignment: center;
+        // alignment: end;
+        alignment: start;
         padding: 0;
+        spacing: 0;
 
         HorizontalBox {
             padding-right: 16px;
@@ -25,6 +36,8 @@ export component O2Page inherits Window {
 
             Text {
                 // See https://github.com/slint-ui/slint/issues/5822
+                width: 150px;
+
                 text: root.o2-lambda-reading;
                 vertical-alignment: bottom;
                 horizontal-alignment: right;
@@ -39,6 +52,28 @@ export component O2Page inherits Window {
                 vertical-alignment: bottom;
                 font-size: 42px;
                 height: 100%;
+            }
+        }
+
+        HorizontalBox {
+            padding: 0;
+            spacing: 0;
+            alignment: center;
+
+            Rectangle {
+                height: 16px;
+                width: 180px;
+                border-radius: 4px;
+                border-color: white;
+                border-width: 2px;
+                clip: true;
+
+                Rectangle {
+                    x: 2px;
+                    width: (parent.width * percent-progress(root.o2-lambda-reading)) - 4px;
+                    height: parent.height - 4px;
+                    background: white;
+                }
             }
         }
     }

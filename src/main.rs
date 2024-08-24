@@ -131,7 +131,7 @@ fn main() -> ! {
 
     let app_window = AppWindow::new().unwrap();
 
-    app_window.set_o2_lambda_reading(0.950);
+    let mut afr: f32 = 0.500;
 
     loop {
         slint::platform::update_timers_and_animations();
@@ -163,6 +163,12 @@ fn main() -> ! {
         if window.has_active_animations() {
             continue;
         }
+        if afr > 2.0 {
+            afr = 0.5;
+        }
+
+        app_window.set_o2_lambda_reading(afr);
+        afr += 0.01;
     }
 }
 
