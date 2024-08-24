@@ -2,7 +2,18 @@ import { AboutSlint, Button, VerticalBox, Palette, Spinner, HorizontalBox } from
 import { AppFonts, DisplayLimits } from "./common.slint";
 
 export component O2Page inherits Window {
-    in property <string> o2-lambda-reading: "1.000";
+    in property <float> o2-lambda-reading: 1.000;
+    in property <float> min-o2-lambda: 0.500;
+    in property <float> max-o2-lambda: 1.600;
+
+    pure function is-error(reading: string) -> bool {
+        if (o2-lambda-reading > max-o2-lambda) {
+            return true;
+        } else if (o2-lambda-reading < min-o2-lambda) {
+            return true;
+        }
+        return false;
+    }
 
     VerticalBox {
         alignment: center;
@@ -13,9 +24,11 @@ export component O2Page inherits Window {
             alignment: end;
 
             Text {
+                // See https://github.com/slint-ui/slint/issues/5822
                 text: root.o2-lambda-reading;
                 vertical-alignment: bottom;
                 horizontal-alignment: right;
+                color: is-error(root.o2-lambda-reading) ? red : white;
                 font-family: AppFonts.gauges-font-name;
                 font-size: 100px;
                 height: 100%;

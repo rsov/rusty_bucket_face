@@ -131,7 +131,7 @@ fn main() -> ! {
 
     let app_window = AppWindow::new().unwrap();
 
-    app_window.set_o2_lambda_reading("0.950".into());
+    app_window.set_o2_lambda_reading(0.950);
 
     loop {
         slint::platform::update_timers_and_animations();
