@@ -3,7 +3,7 @@ name: Publish binary
 on:
   push:
     branches:
-      - production
+      - main
     paths-ignore:
       - "**/README.md"
       - ".devcontainer/**"
