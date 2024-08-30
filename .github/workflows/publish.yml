@@ -52,7 +52,7 @@ jobs:
 
       - name: Save firmware
         run: |
-          espflash save-image --merge --chip esp32 "${GITHUB_WORKSPACE}/target/xtensa-esp32-none-elf/release/rusty-bucket-face" "${GITHUB_WORKSPACE}/dist/firmware.bin"
+          espflash save-image --merge --chip esp32s3 "${GITHUB_WORKSPACE}/target/xtensa-esp32s3-none-elf/release/rusty-bucket-face" "${GITHUB_WORKSPACE}/dist/firmware.bin"
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
