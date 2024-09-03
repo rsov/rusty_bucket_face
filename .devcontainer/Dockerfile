@@ -15,6 +15,8 @@ ARG GITHUB_TOKEN
 RUN apt-get update \
     && apt-get install -y git curl llvm-dev libclang-dev clang unzip \
     libusb-1.0-0 libssl-dev libudev-dev pkg-config \
+    # Slint server dependencies
+    libxkbcommon-x11-0 libinput10 libgbm-dev \
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
 
 # Set users
