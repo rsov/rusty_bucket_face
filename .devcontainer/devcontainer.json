@@ -46,5 +46,8 @@
     3333
   ],
   "workspaceMount": "source=${localWorkspaceFolder},target=/home/esp/rusty_bucket_face,type=bind,consistency=cached",
-  "workspaceFolder": "/home/esp/rusty_bucket_face"
+  "workspaceFolder": "/home/esp/rusty_bucket_face",
+  "mounts": [
+    "source=${localEnv:HOME}/.ssh,target=/home/esp/.ssh,type=bind,consistency=cached"
+  ]
 }
