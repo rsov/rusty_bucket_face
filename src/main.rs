@@ -103,7 +103,6 @@ fn main() -> ! {
         io.pins.gpio12, // SCL
         100u32.kHz(),
         &clocks,
-        None,
     );
     let touch_int = Input::new(io.pins.gpio6, Pull::Up);
     let touch_rst = Output::new(io.pins.gpio7, gpio::Level::Low);
@@ -185,7 +184,7 @@ impl slint::platform::Platform for EspBackend {
 
     fn duration_since_start(&self) -> core::time::Duration {
         core::time::Duration::from_millis(
-            SystemTimer::now() / (SystemTimer::TICKS_PER_SECOND / 1000),
+            SystemTimer::now() / (SystemTimer::ticks_per_second() / 1000),
         )
     }
 }

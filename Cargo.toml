@@ -10,18 +10,18 @@ license = "MIT OR Apache-2.0"
 # gc9a01-rs = "0.2.1"
 gc9a01-rs = { git = "https://github.com/rsov/gc9a01.git", branch = "feature/direct-write" }
 
-esp-backtrace = { version = "0.13.0", features = [
+esp-backtrace = { version = "0.14.0", features = [
     "esp32s3",
     "exception-handler",
     "panic-handler",
     "println",
 ] }
-esp-hal = { version = "0.19.0", features = ["log", "esp32s3", "embedded-hal"] }
-esp-println = { version = "0.10.0", features = ["esp32s3", "log"] }
+esp-hal = { version = "0.20.1", features = ["log", "esp32s3", "embedded-hal"] }
+esp-println = { version = "0.11.0", features = ["esp32s3", "log"] }
 log = { version = "0.4.21" }
 esp-alloc = { version = "0.4.0" }
 embedded-io = "0.6.1"
-esp-wifi = { version = "0.7.1", features = [
+esp-wifi = { version = "0.8.0", features = [
     "esp32s3",
     "phy-enable-usb",
     "utils",
