@@ -14,14 +14,8 @@ export component AppWindow inherits Window {
     }
 
     DisplayLimits {
-        VerticalBox {
-            padding: 0;
-            padding-top: 16px;
-            alignment: start;
-
-            O2Page {
-                o2-lambda-reading: root.o2-lambda-reading;
-            }
+        O2Page {
+            o2-lambda-reading: root.o2-lambda-reading;
         }
     }
 }
