@@ -21,7 +21,7 @@ esp-println = { version = "0.11.0", features = ["esp32s3", "log"] }
 log = { version = "0.4.21" }
 esp-alloc = { version = "0.4.0" }
 embedded-io = "0.6.1"
-esp-wifi = { version = "0.8.0", features = [
+esp-wifi = { version = "0.9.1", features = [
     "esp32s3",
     "phy-enable-usb",
     "utils",
