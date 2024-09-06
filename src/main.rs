@@ -132,6 +132,8 @@ fn main() -> ! {
 
     let mut afr: f32 = 0.500;
 
+    let mut next_update_milliseconds: u128 = 100;
+
     loop {
         slint::platform::update_timers_and_animations();
 
@@ -165,12 +167,19 @@ fn main() -> ! {
         if window.has_active_animations() {
             continue;
         }
-        if afr > 2.0 {
-            afr = 0.5;
-        }
 
-        app_window.set_o2_lambda_reading(afr);
-        afr += 0.01;
+        let duration = core::time::Duration::from_millis(
+            SystemTimer::now() / (SystemTimer::ticks_per_second() / 1000),
+        );
+
+        if next_update_milliseconds < duration.as_millis() {
+            if afr > 2.0 {
+                afr = 0.5;
+            }
+            app_window.set_o2_lambda_reading(afr);
+            afr += 0.01;
+            next_update_milliseconds += 150;
+        }
     }
 }
 
