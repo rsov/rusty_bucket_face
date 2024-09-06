@@ -90,16 +90,28 @@ export component AppWindow inherits Window {
                 }
             }
 
-            Rectangle {
+            HorizontalLayout {
                 width: 240px;
-                height: 240px;
-                background: blue;
+                alignment: center;
+
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: "Gauge 2";
+                        font-size: 24px;
+                    }
+                }
             }
 
-            Rectangle {
+            HorizontalLayout {
                 width: 240px;
-                height: 240px;
-                background: yellow;
+                VerticalLayout {
+                    alignment: center;
+
+                    AboutSlint {
+                        width: 100%;
+                    }
+                }
             }
         }
     }
