@@ -138,7 +138,10 @@ fn main() -> ! {
         if let Some(evt) = touchpad.read_one_touch_event(true) {
             // TODO: Sync with rotation of the screen, subtraction is a hack
             // dunno if height of width should be used here
-            let position = slint::LogicalPosition::new(evt.x as _, (WINDOW_HEIGHT - evt.y) as _);
+            let position = slint::LogicalPosition::new(
+                (WINDOW_WIDTH - evt.x) as _,
+                (WINDOW_HEIGHT - evt.y) as _,
+            );
 
             if evt.action == 0 {
                 window.dispatch_event(slint::platform::WindowEvent::PointerPressed {
