@@ -2,6 +2,7 @@
     "rust-analyzer.check.allTargets": false,
     "cSpell.words": [
         "BAUDRATE",
+        "Flickable",
         "gpio",
         "mosi",
         "pixelcolor",

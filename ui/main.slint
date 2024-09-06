@@ -2,6 +2,65 @@ import { AboutSlint, Button, VerticalBox, Palette, ScrollView, HorizontalBox } f
 import { DisplayLimits, AppFonts } from "./common.slint";
 import { O2Page } from "o2_page.slint";
 
+component Carousel inherits FocusScope {
+    in-out property <int> selected-index;
+    in property <length> spacing;
+    in property <length> itemWidth;
+    in property <int> count: 0;
+
+    callback move-right();
+    callback move-left();
+    callback move-focus-up();
+
+    move-right => {
+        root.selected-index = min(root.selected-index + 1, root.count - 1);
+    }
+
+    move-left => {
+        root.selected-index = max(root.selected-index - 1, 0);
+    }
+
+    private property <length> center-x: (root.width - 240px) / 2;
+    private property <duration> duration: 0.3s;
+
+    Rectangle {
+        clip: true;
+        background: transparent;
+
+        flickable := Flickable {
+            interactive: false;
+            viewport-x: root.center-x - root.selected-index * (root.itemWidth + root.spacing);
+
+            animate viewport-x {
+                duration: root.duration;
+                easing: ease-in;
+            }
+
+            TouchArea {
+                property <length> last-mouse-x: 0px;
+
+                pointer-event(event) => {
+
+                    if (event.kind == PointerEventKind.down) {
+                        last-mouse-x = self.mouse-x;
+                    } else if (event.kind == PointerEventKind.up) {
+
+                        if (last-mouse-x > self.mouse-x) {
+                            root.move-right();
+                        } else {
+                            root.move-left();
+                        }
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                @children
+            }
+        }
+    }
+}
+
 export component AppWindow inherits Window {
     in-out property <float> o2-lambda-reading: 1.000;
 
@@ -14,8 +73,34 @@ export component AppWindow inherits Window {
     }
 
     DisplayLimits {
-        O2Page {
-            o2-lambda-reading: root.o2-lambda-reading;
+
+        Carousel {
+            y: (root.height - self.height) / 2;
+            height: 100%;
+            itemWidth: 240px;
+            count: 3;
+            spacing: 0px;
+
+            Rectangle {
+                width: 240px;
+                height: 240px;
+
+                O2Page {
+                    o2-lambda-reading: root.o2-lambda-reading;
+                }
+            }
+
+            Rectangle {
+                width: 240px;
+                height: 240px;
+                background: blue;
+            }
+
+            Rectangle {
+                width: 240px;
+                height: 240px;
+                background: yellow;
+            }
         }
     }
 }
