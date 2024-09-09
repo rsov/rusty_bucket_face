@@ -74,18 +74,18 @@ export component AppWindow inherits Window {
 
     DisplayLimits {
 
-        Carousel {
+        i-carousel := Carousel {
             y: (root.height - self.height) / 2;
             height: 100%;
             itemWidth: 240px;
-            count: 3;
+            count: 5;
             spacing: 0px;
 
             Rectangle {
                 width: 240px;
                 height: 240px;
 
-                O2Page {
+                if(i-carousel.selected-index <= 1): O2Page {
                     o2-lambda-reading: root.o2-lambda-reading;
                 }
             }
@@ -98,6 +98,32 @@ export component AppWindow inherits Window {
                     alignment: center;
                     Text {
                         text: "Gauge 2";
+                        font-size: 24px;
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                width: 240px;
+                alignment: center;
+
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: "Gauge 3";
+                        font-size: 24px;
+                    }
+                }
+            }
+
+            HorizontalLayout {
+                width: 240px;
+                alignment: center;
+
+                VerticalLayout {
+                    alignment: center;
+                    Text {
+                        text: "Gauge 4";
                         font-size: 24px;
                     }
                 }
