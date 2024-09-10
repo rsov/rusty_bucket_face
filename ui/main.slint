@@ -129,13 +129,30 @@ export component AppWindow inherits Window {
                 }
             }
 
-            HorizontalLayout {
+            ScrollView {
+                viewport-height: 420px;
+                viewport-width: 240px;
+                height: 240px;
                 width: 240px;
+
                 VerticalLayout {
-                    alignment: center;
+                    padding-top: 64px;
+                    padding-bottom: 64px;
 
                     AboutSlint {
                         width: 100%;
+                    }
+
+                    Text {
+                        text: "Ferris the\nrustacean";
+                        horizontal-alignment: center;
+                        font-size: 24px;
+                    }
+
+                    Image {
+                        width: 100%;
+                        height: 100px;
+                        source: @image-url("./assets/rustacean-flat-happy.png");
                     }
                 }
             }

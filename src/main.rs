@@ -178,7 +178,7 @@ fn main() -> ! {
             }
             app_window.set_o2_lambda_reading(afr);
             afr += 0.01;
-            next_update_milliseconds += 150;
+            next_update_milliseconds += 200;
         }
     }
 }
