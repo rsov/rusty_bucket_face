@@ -927,9 +927,9 @@ dependencies = [
 
 [[package]]
 name = "esp-backtrace"
-version = "0.14.0"
+version = "0.14.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "236ebd8a874b490b4c3bb3fbfc49f10732729012bf9d639b3a17570d2ba79a07"
+checksum = "9c2ff4bce686f28fe48a5d16aaa48c30b627a423bb689be57949bb210b8551d0"
 dependencies = [
  "esp-build",
  "esp-println",
