@@ -41,6 +41,8 @@ Connection to Arduino Nano ESP32
 | TP_SCL  | A5      | Blue   | 12   |
 | TP_INT  | D3      | Yellow | 06   |
 | TP_RST  | D4      | Purple | 06   |
+| CAN RX  | D1      |        | 44   |
+
 
 
 

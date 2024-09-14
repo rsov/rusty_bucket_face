@@ -16,7 +16,12 @@ esp-backtrace = { version = "0.14.1", features = [
     "panic-handler",
     "println",
 ] }
-esp-hal = { version = "0.20.1", features = ["log", "esp32s3", "embedded-hal"] }
+esp-hal = { version = "0.20.1", features = [
+    "log",
+    "esp32s3",
+    "embedded-hal",
+    "async",
+] }
 esp-println = { version = "0.11.0", features = ["esp32s3", "log"] }
 log = { version = "0.4.21" }
 esp-alloc = { version = "0.4.0" }
@@ -29,12 +34,21 @@ esp-wifi = { version = "0.9.1", features = [
 ] }
 embedded-hal = "1.0.0"
 embedded-hal-bus = "0.2.0"
+embedded-hal-async = "1.0.0"
+
 slint = { version = "1.7.2", default-features = false, features = [
     "compat-1-2",
     "unsafe-single-threaded",
     "libm",
     "renderer-software",
 ] }
+
+esp-hal-embassy = { version = "0.3.0", features = ["esp32s3"] }
+embassy-executor = "0.6.0"
+embassy-time = { version = "0.3.2", features = ["generic-queue-8"] }
+static_cell = "2.1.0"
+embassy-sync = "0.6.0"
+
 
 [profile.dev]
 # Rust debug is too slow.

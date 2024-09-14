@@ -7,6 +7,7 @@ pub mod cst816s;
 
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
 use core::{cell::RefCell, default::Default, mem::MaybeUninit};
+use embassy_executor::Spawner;
 use embedded_hal_bus::spi::RefCellDevice;
 use esp_backtrace as _;
 use esp_hal::{
@@ -14,11 +15,13 @@ use esp_hal::{
     delay::Delay,
     gpio::{self, Input, Io, Output, Pull},
     i2c::I2C,
-    peripherals::Peripherals,
+    interrupt,
+    peripherals::{self, Peripherals, TWAI0},
     prelude::*,
     spi::{self, master::Spi},
     system::SystemControl,
-    timer::systimer::SystemTimer,
+    timer::{systimer::SystemTimer, timg::TimerGroup},
+    twai::{self, TwaiMode, TwaiRx},
 };
 use esp_println::println;
 use gc9a01::{mode::BufferedGraphics, prelude::*, Gc9a01, SPIDisplayInterface};
@@ -32,8 +35,8 @@ static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 const WINDOW_WIDTH: i32 = 240;
 const WINDOW_HEIGHT: i32 = 240;
 
-#[entry]
-fn main() -> ! {
+#[esp_hal_embassy::main]
+async fn main(spawner: Spawner) {
     // ------------------------ MCU SET UP ------------------------
     const HEAP_SIZE: usize = 32 * 1024;
     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
@@ -47,6 +50,9 @@ fn main() -> ! {
 
     let clocks = ClockControl::max(system.clock_control).freeze();
     let mut delay = Delay::new(&clocks);
+
+    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
+    esp_hal_embassy::init(&clocks, timg0.timer0);
 
     // setup logger
     // To change the log_level change the env section in .cargo/config.toml
@@ -130,6 +136,53 @@ fn main() -> ! {
 
     let app_window = AppWindow::new().unwrap();
 
+    // ------------------------ CAN Bus (TWAI) ------------------------
+
+    let can_tx_pin = io.pins.gpio43; // Needs it?
+    let can_rx_pin = io.pins.gpio44;
+
+    // The speed of the CAN bus.
+    const CAN_BAUDRATE: twai::BaudRate = twai::BaudRate::B1000K;
+
+    // Begin configuring the TWAI peripheral. The peripheral is in a reset like
+    // state that prevents transmission but allows configuration.
+    let mut can_config = twai::TwaiConfiguration::new_async_no_transceiver(
+        peripherals.TWAI0,
+        can_tx_pin,
+        can_rx_pin,
+        &clocks,
+        CAN_BAUDRATE,
+        TwaiMode::Normal,
+    );
+
+    // Partially filter the incoming messages to reduce overhead of receiving
+    // undesired messages. Note that due to how the hardware filters messages,
+    // standard ids and extended ids may both match a filter. Frame ids should
+    // be explicitly checked in the application instead of fully relying on
+    // these partial acceptance filters to exactly match. A filter that matches
+    // standard ids of an even value.
+    const FILTER: twai::filter::SingleStandardFilter =
+        twai::filter::SingleStandardFilter::new(b"xxxxxxxxxx0", b"x", [b"xxxxxxxx", b"xxxxxxxx"]);
+    can_config.set_filter(FILTER);
+
+    // Start the peripheral. This locks the configuration settings of the peripheral
+    // and puts it into operation mode, allowing packets to be sent and
+    // received.
+    let can = can_config.start();
+
+    // Get separate transmit and receive halves of the peripheral.
+    let (_tx, rx) = can.split();
+
+    interrupt::enable(
+        peripherals::Interrupt::TWAI0,
+        interrupt::Priority::Priority1,
+    )
+    .unwrap();
+
+    spawner.spawn(receiver(rx)).ok();
+
+    // ------------------------ APP ------------------------
+
     let mut afr: f32 = 0.500;
 
     let mut next_update_milliseconds: u128 = 100;
@@ -179,6 +232,24 @@ fn main() -> ! {
             app_window.set_o2_lambda_reading(afr);
             afr += 0.01;
             next_update_milliseconds += 200;
+        }
+    }
+}
+
+#[embassy_executor::task]
+async fn receiver(mut rx: TwaiRx<'static, TWAI0, esp_hal::Async>) -> ! {
+    println!("CAN Listening..");
+
+    loop {
+        let frame = rx.receive_async().await;
+
+        match frame {
+            Ok(frame) => {
+                println!("Received a frame: {:?}", frame);
+            }
+            Err(e) => {
+                println!("Receive error: {:?}", e);
+            }
         }
     }
 }
