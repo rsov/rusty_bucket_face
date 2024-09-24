@@ -36,7 +36,7 @@ embedded-hal = "1.0.0"
 embedded-hal-bus = "0.2.0"
 embedded-hal-async = "1.0.0"
 
-slint = { version = "1.7.2", default-features = false, features = [
+slint = { version = "1.8.0", default-features = false, features = [
     "compat-1-2",
     "unsafe-single-threaded",
     "libm",
@@ -65,4 +65,4 @@ opt-level = 's'
 overflow-checks = false
 
 [build-dependencies]
-slint-build = "1.7.2"
+slint-build = "1.8.0"

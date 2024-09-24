@@ -3,60 +3,61 @@ import { DisplayLimits, AppFonts } from "./common.slint";
 import { O2Page } from "o2_page.slint";
 
 component Carousel inherits FocusScope {
-    in-out property <int> selected-index;
-    in property <length> spacing;
-    in property <length> itemWidth;
-    in property <int> count: 0;
+    in-out property <int> current-page: 0;
+    in property <int> count: 4;
+    property <length> swipe-padding;
 
-    callback move-right();
-    callback move-left();
-    callback move-focus-up();
+    sgr := SwipeGestureHandler {
+        handle-swipe-right: current-page > 0;
+        handle-swipe-left: current-page < root.count;
+        swiped => {
+            if self.current-position.x > self.pressed-position.x + root.swipe-padding {
+                current-page -= 1;
+            } else if self.current-position.x < self.pressed-position.x - root.swipe-padding {
+                current-page += 1;
+            }
+        }
 
-    move-right => {
-        root.selected-index = min(root.selected-index + 1, root.count - 1);
+        HorizontalLayout {
+            property <length> position: - current-page * root.width;
+            animate position {
+                duration: 200ms;
+                easing: ease-in-out;
+            }
+            property <length> swipe-offset;
+            x: position + swipe-offset;
+
+            @children
+        }
     }
+}
 
-    move-left => {
-        root.selected-index = max(root.selected-index - 1, 0);
-    }
+component VerticalCarousel inherits FocusScope {
+    in-out property <int> current-page: 0;
+    in property <int> count: 2;
+    property <length> swipe-padding: 20px;
 
-    private property <length> center-x: (root.width - 240px) / 2;
-    private property <duration> duration: 0.3s;
-
-    Rectangle {
-        clip: true;
-        background: transparent;
-
-        flickable := Flickable {
-            interactive: false;
-            viewport-x: root.center-x - root.selected-index * (root.itemWidth + root.spacing);
-
-            animate viewport-x {
-                duration: root.duration;
-                easing: ease-in;
+    sgr := SwipeGestureHandler {
+        handle-swipe-down: current-page > 0;
+        handle-swipe-up: current-page < root.count - 1;
+        swiped => {
+            if self.current-position.y > self.pressed-position.y + root.swipe-padding {
+                current-page -= 1;
+            } else if self.current-position.y < self.pressed-position.y - root.swipe-padding {
+                current-page += 1;
             }
+        }
 
-            TouchArea {
-                property <length> last-mouse-x: 0px;
-
-                pointer-event(event) => {
-
-                    if (event.kind == PointerEventKind.down) {
-                        last-mouse-x = self.mouse-x;
-                    } else if (event.kind == PointerEventKind.up) {
-
-                        if (last-mouse-x > self.mouse-x) {
-                            root.move-right();
-                        } else {
-                            root.move-left();
-                        }
-                    }
-                }
+        VerticalLayout {
+            property <length> position: - current-page * root.height;
+            animate position {
+                duration: 200ms;
+                easing: ease-in-out;
             }
+            property <length> swipe-offset;
+            y: position + swipe-offset;
 
-            HorizontalLayout {
-                @children
-            }
+            @children
         }
     }
 }
@@ -75,17 +76,13 @@ export component AppWindow inherits Window {
     DisplayLimits {
 
         i-carousel := Carousel {
-            y: (root.height - self.height) / 2;
-            height: 100%;
-            itemWidth: 240px;
-            count: 5;
-            spacing: 0px;
-
+            count: 4;
             Rectangle {
                 width: 240px;
                 height: 240px;
 
-                if(i-carousel.selected-index <= 1): O2Page {
+                // Unloads so display does not update if hidden
+                if(i-carousel.current-page <= 1): O2Page {
                     o2-lambda-reading: root.o2-lambda-reading;
                 }
             }
@@ -129,30 +126,45 @@ export component AppWindow inherits Window {
                 }
             }
 
-            ScrollView {
-                viewport-height: 420px;
-                viewport-width: 240px;
+            VerticalCarousel {
+                count: 3;
                 height: 240px;
                 width: 240px;
 
-                VerticalLayout {
-                    padding-top: 64px;
-                    padding-bottom: 64px;
+                HorizontalLayout {
+                    height: 240px;
+                    alignment: center;
 
-                    AboutSlint {
-                        width: 100%;
+                    VerticalLayout {
+                        alignment: center;
+                        AboutSlint {
+                            width: 100%;
+                        }
                     }
+                }
 
-                    Text {
-                        text: "Ferris the\nrustacean";
-                        horizontal-alignment: center;
-                        font-size: 24px;
+                HorizontalLayout {
+                    height: 240px;
+                    alignment: center;
+                    VerticalLayout {
+                        alignment: center;
+                        Text {
+                            text: "Ferris the\nrustacean";
+                            font-size: 24px;
+                        }
                     }
+                }
 
-                    Image {
-                        width: 100%;
-                        height: 100px;
-                        source: @image-url("./assets/rustacean-flat-happy.png");
+                HorizontalLayout {
+                    height: 240px;
+                    alignment: center;
+                    VerticalLayout {
+                        alignment: center;
+                        Image {
+                            width: 100%;
+                            height: 100px;
+                            source: @image-url("./assets/rustacean-flat-happy.png");
+                        }
                     }
                 }
             }
