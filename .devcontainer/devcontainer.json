@@ -37,7 +37,8 @@
         "actboy168.tasks",
         "Wokwi.wokwi-vscode",
         "streetsidesoftware.code-spell-checker",
-        "Slint.slint"
+        "Slint.slint",
+        "fill-labs.dependi"
       ]
     }
   },
