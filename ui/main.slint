@@ -5,7 +5,7 @@ import { O2Page } from "o2_page.slint";
 component Carousel inherits FocusScope {
     in-out property <int> current-page: 0;
     in property <int> count: 4;
-    property <length> swipe-padding;
+    property <length> swipe-padding: 5px;
 
     sgr := SwipeGestureHandler {
         handle-swipe-right: current-page > 0;
@@ -35,7 +35,7 @@ component Carousel inherits FocusScope {
 component VerticalCarousel inherits FocusScope {
     in-out property <int> current-page: 0;
     in property <int> count: 2;
-    property <length> swipe-padding: 20px;
+    property <length> swipe-padding: 5px;
 
     sgr := SwipeGestureHandler {
         handle-swipe-down: current-page > 0;
