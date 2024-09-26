@@ -2802,7 +2802,6 @@ name = "rusty-bucket-face"
 version = "0.1.0"
 dependencies = [
  "embassy-executor",
- "embassy-sync 0.6.0",
  "embassy-time",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
@@ -2819,6 +2818,7 @@ dependencies = [
  "slint",
  "slint-build",
  "static_cell",
+ "xtensa-lx-rt",
 ]
 
 [[package]]
@@ -3940,9 +3940,9 @@ dependencies = [
 
 [[package]]
 name = "xtensa-lx-rt"
-version = "0.17.0"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b657da7a82a76b695b12d9188be2d8437854157b20d543e2dcac5589bbc85f1c"
+checksum = "2ceb69c1487b78d83531c5d94fb81d0dceef1ccb0affba29f29420b1f72d3ddb"
 dependencies = [
  "anyhow",
  "bare-metal",

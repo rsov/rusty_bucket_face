@@ -8,6 +8,7 @@ pub mod cst816s;
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
 use core::{cell::RefCell, default::Default, mem::MaybeUninit};
 use embassy_executor::Spawner;
+use embassy_time::{Duration, Timer};
 use embedded_hal_bus::spi::RefCellDevice;
 use esp_backtrace as _;
 use esp_hal::{
@@ -45,6 +46,14 @@ async fn main(spawner: Spawner) {
         ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
     }
 
+    // setup logger
+    // To change the log_level change the env section in .cargo/config.toml
+    // or remove it and set ESP_LOGLEVEL manually before running cargo run
+    // this requires a clean rebuild because of https://github.com/rust-lang/cargo/issues/10358
+    esp_println::logger::init_logger_from_env();
+    log::info!("Logger is setup");
+    println!("Hello world!");
+
     let peripherals = Peripherals::take();
     let system = SystemControl::new(peripherals.SYSTEM);
 
@@ -53,14 +62,6 @@ async fn main(spawner: Spawner) {
 
     let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
     esp_hal_embassy::init(&clocks, timg0.timer0);
-
-    // setup logger
-    // To change the log_level change the env section in .cargo/config.toml
-    // or remove it and set ESP_LOGLEVEL manually before running cargo run
-    // this requires a clean rebuild because of https://github.com/rust-lang/cargo/issues/10358
-    esp_println::logger::init_logger_from_env();
-    log::info!("Logger is setup");
-    println!("Hello world!");
 
     let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
 
@@ -179,14 +180,9 @@ async fn main(spawner: Spawner) {
     )
     .unwrap();
 
-    spawner.spawn(receiver(rx)).ok();
+    spawner.spawn(receiver(rx, app_window)).ok();
 
     // ------------------------ APP ------------------------
-
-    let mut afr: f32 = 0.500;
-
-    let mut next_update_milliseconds: u128 = 100;
-
     loop {
         slint::platform::update_timers_and_animations();
 
@@ -219,38 +215,40 @@ async fn main(spawner: Spawner) {
 
         if window.has_active_animations() {
             continue;
-        }
-
-        let duration = core::time::Duration::from_millis(
-            SystemTimer::now() / (SystemTimer::ticks_per_second() / 1000),
-        );
-
-        if next_update_milliseconds < duration.as_millis() {
-            if afr > 2.0 {
-                afr = 0.5;
-            }
-            app_window.set_o2_lambda_reading(afr);
-            afr += 0.01;
-            next_update_milliseconds += 200;
+        } else {
+            // Needs to have await otherwise won't spawn tasks??
+            Timer::after(Duration::from_millis(1)).await;
         }
     }
 }
 
 #[embassy_executor::task]
-async fn receiver(mut rx: TwaiRx<'static, TWAI0, esp_hal::Async>) -> ! {
+async fn receiver(mut _rx: TwaiRx<'static, TWAI0, esp_hal::Async>, app_window: AppWindow) -> ! {
     println!("CAN Listening..");
+    let mut afr: f32 = 0.500;
 
     loop {
-        let frame = rx.receive_async().await;
+        esp_println::println!("Bing!");
 
-        match frame {
-            Ok(frame) => {
-                println!("Received a frame: {:?}", frame);
-            }
-            Err(e) => {
-                println!("Receive error: {:?}", e);
-            }
+        if afr > 2.0 {
+            afr = 0.5;
         }
+        afr += 0.01;
+
+        // Needs to have await otherwise won't spawn the task??
+        Timer::after(Duration::from_millis(250)).await;
+
+        app_window.set_o2_lambda_reading(afr);
+
+        // let frame = rx.receive_async().await;
+        // match frame {
+        //     Ok(frame) => {
+        //         println!("Received a frame: {:?}", frame);
+        //     }
+        //     Err(e) => {
+        //         println!("Receive error: {:?}", e);
+        //     }
+        // }
     }
 }
 
