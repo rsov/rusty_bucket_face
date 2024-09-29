@@ -7,8 +7,10 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-# gc9a01-rs = "0.2.1"
-gc9a01-rs = { git = "https://github.com/rsov/gc9a01.git", branch = "feature/direct-write" }
+gc9a01-rs = { git = "https://github.com/IniterWorker/gc9a01.git", branch = "master", features = [
+    'graphics',
+] }
+embedded-graphics-core = "0.4.0"
 
 esp-backtrace = { version = "0.14.1", features = [
     "esp32s3",

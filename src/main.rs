@@ -5,10 +5,16 @@ extern crate alloc;
 
 pub mod cst816s;
 
-use alloc::{boxed::Box, rc::Rc, vec::Vec};
+use alloc::{boxed::Box, rc::Rc};
 use core::{cell::RefCell, default::Default, mem::MaybeUninit};
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Timer};
+use embedded_graphics_core::{
+    draw_target::DrawTarget,
+    pixelcolor::raw::RawU16,
+    prelude::{Point, Size},
+    primitives::Rectangle,
+};
 use embedded_hal_bus::spi::RefCellDevice;
 use esp_backtrace as _;
 use esp_hal::{
@@ -25,7 +31,7 @@ use esp_hal::{
     twai::{self, TwaiMode, TwaiRx},
 };
 use esp_println::println;
-use gc9a01::{mode::BufferedGraphics, prelude::*, Gc9a01, SPIDisplayInterface};
+use gc9a01::{mode::BasicMode, prelude::*, Gc9a01, SPIDisplayInterface};
 use slint::platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton};
 
 slint::include_modules!();
@@ -87,18 +93,15 @@ async fn main(spawner: Spawner) {
     let spi_device = RefCellDevice::new_no_delay(&spi_bus, cs_output).unwrap();
     let interface = SPIDisplayInterface::new(spi_device, dc_output);
 
-    let driver = Gc9a01::new(
+    let mut display = Gc9a01::new(
         interface,
         DisplayResolution240x240,
         DisplayRotation::Rotate0,
     );
 
-    let mut display = driver.into_buffered_graphics();
-
     display.clear_fit().unwrap();
     display.reset(&mut led_reset, &mut delay).unwrap();
     display.init(&mut delay).unwrap();
-    display.flush().unwrap();
 
     // ------------------------ TOUCH PAD SET UP ------------------------
 
@@ -277,13 +280,13 @@ struct DrawBuffer<'a, Display> {
 
 impl<I: WriteOnlyDataCommand, D: DisplayDefinition>
     slint::platform::software_renderer::LineBufferProvider
-    for &mut DrawBuffer<'_, Gc9a01<I, D, BufferedGraphics<D>>>
+    for &mut DrawBuffer<'_, Gc9a01<I, D, BasicMode>>
 {
     type TargetPixel = slint::platform::software_renderer::Rgb565Pixel;
 
     fn process_line(
         &mut self,
-        _line: usize,
+        line: usize,
         range: core::ops::Range<usize>,
         render_fn: impl FnOnce(&mut [slint::platform::software_renderer::Rgb565Pixel]),
     ) {
@@ -292,7 +295,14 @@ impl<I: WriteOnlyDataCommand, D: DisplayDefinition>
         render_fn(buffer);
 
         self.display
-            .send_line(&buffer.iter().map(|&x| x.0.to_be()).collect::<Vec<u16>>())
+            .fill_contiguous(
+                &Rectangle::new(
+                    Point::new(range.start as _, line as _),
+                    Size::new(range.len() as _, 1),
+                ),
+                buffer.iter().map(|p| RawU16::new(p.0).into()),
+            )
+            .map_err(drop)
             .unwrap();
     }
 }

@@ -1426,8 +1426,8 @@ dependencies = [
 
 [[package]]
 name = "gc9a01-rs"
-version = "0.2.1"
-source = "git+https://github.com/rsov/gc9a01.git?branch=feature/direct-write#7f5a94657cf327b9a23a1a80a28fe015edc09cdd"
+version = "0.3.1"
+source = "git+https://github.com/IniterWorker/gc9a01.git?branch=master#7f9b847c3ad16395dfbe7c8b476c78d226b3a5d7"
 dependencies = [
  "display-interface",
  "display-interface-spi",
@@ -2803,6 +2803,7 @@ version = "0.1.0"
 dependencies = [
  "embassy-executor",
  "embassy-time",
+ "embedded-graphics-core",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
  "embedded-hal-bus",
