@@ -18,15 +18,13 @@ use embedded_graphics_core::{
 use embedded_hal_bus::spi::RefCellDevice;
 use esp_backtrace as _;
 use esp_hal::{
-    clock::ClockControl,
     delay::Delay,
     gpio::{self, Input, Io, Output, Pull},
-    i2c::I2C,
+    i2c::I2c,
     interrupt,
-    peripherals::{self, Peripherals, TWAI0},
+    peripherals::{self, TWAI0},
     prelude::*,
     spi::{self, master::Spi},
-    system::SystemControl,
     timer::{systimer::SystemTimer, timg::TimerGroup},
     twai::{self, TwaiMode, TwaiRx},
 };
@@ -35,9 +33,6 @@ use gc9a01::{mode::BasicMode, prelude::*, Gc9a01, SPIDisplayInterface};
 use slint::platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton};
 
 slint::include_modules!();
-
-#[global_allocator]
-static ALLOCATOR: esp_alloc::EspHeap = esp_alloc::EspHeap::empty();
 
 const WINDOW_WIDTH: i32 = 240;
 const WINDOW_HEIGHT: i32 = 240;
@@ -49,7 +44,11 @@ async fn main(spawner: Spawner) {
     static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
 
     unsafe {
-        ALLOCATOR.init(HEAP.as_mut_ptr() as *mut u8, HEAP_SIZE);
+        esp_alloc::HEAP.add_region(esp_alloc::HeapRegion::new(
+            HEAP.as_mut_ptr() as *mut u8,
+            HEAP_SIZE,
+            esp_alloc::MemoryCapability::Internal.into(),
+        ));
     }
 
     // setup logger
@@ -60,14 +59,14 @@ async fn main(spawner: Spawner) {
     log::info!("Logger is setup");
     println!("Hello world!");
 
-    let peripherals = Peripherals::take();
-    let system = SystemControl::new(peripherals.SYSTEM);
+    let peripherals = esp_hal::init(esp_hal::Config::default());
+    // let system = SystemControl::new(peripherals.SYSTEM);
 
-    let clocks = ClockControl::max(system.clock_control).freeze();
-    let mut delay = Delay::new(&clocks);
+    // let clocks = ClockControl::max(system.clock_control).freeze();
+    let mut delay = Delay::new();
 
-    let timg0 = TimerGroup::new(peripherals.TIMG0, &clocks);
-    esp_hal_embassy::init(&clocks, timg0.timer0);
+    let timg0 = TimerGroup::new(peripherals.TIMG0);
+    esp_hal_embassy::init(timg0.timer0);
 
     let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
 
@@ -82,11 +81,11 @@ async fn main(spawner: Spawner) {
     let dc_output = Output::new(io.pins.gpio10, gpio::Level::Low);
     let mut led_reset = Output::new(io.pins.gpio17, gpio::Level::Low);
 
-    let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0, &clocks).with_pins(
-        Some(sck),
-        Some(mosi),
-        Some(miso),
-        gpio::NO_PIN,
+    let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0).with_pins(
+        sck,
+        mosi,
+        miso,
+        gpio::NoPin,
     );
 
     let spi_bus = RefCell::new(spi);
@@ -107,12 +106,11 @@ async fn main(spawner: Spawner) {
 
     // Create a new peripheral object with the described wiring and standard
     // I2C clock speed:
-    let i2c = I2C::new(
+    let i2c = I2c::new(
         peripherals.I2C0,
         io.pins.gpio11, // SDA
         io.pins.gpio12, // SCL
         100u32.kHz(),
-        &clocks,
     );
     let touch_int = Input::new(io.pins.gpio6, Pull::Up);
     let touch_rst = Output::new(io.pins.gpio7, gpio::Level::Low);
@@ -154,7 +152,6 @@ async fn main(spawner: Spawner) {
         peripherals.TWAI0,
         can_tx_pin,
         can_rx_pin,
-        &clocks,
         CAN_BAUDRATE,
         TwaiMode::Normal,
     );
@@ -175,7 +172,7 @@ async fn main(spawner: Spawner) {
     let can = can_config.start();
 
     // Get separate transmit and receive halves of the peripheral.
-    let (_tx, rx) = can.split();
+    let (rx, _tx) = can.split();
 
     interrupt::enable(
         peripherals::Interrupt::TWAI0,
