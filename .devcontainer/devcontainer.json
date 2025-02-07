@@ -30,7 +30,6 @@
       "extensions": [
         "rust-lang.rust-analyzer",
         "tamasfe.even-better-toml",
-        "serayuzgur.crates",
         "mutantdino.resourcemonitor",
         "yzhang.markdown-all-in-one",
         "ms-vscode.cpptools",
