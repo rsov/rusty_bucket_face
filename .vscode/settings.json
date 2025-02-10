@@ -1,7 +1,18 @@
 {
     "rust-analyzer.check.allTargets": false,
+    "rust-analyzer.cargo.target": "xtensa-esp32s3-none-elf",
+    "rust-analyzer.server.extraEnv": {
+        "RUSTUP_TOOLCHAIN": "stable"
+    },
+    "rust-analyzer.check.extraEnv": {
+        "RUSTUP_TOOLCHAIN": "esp"
+    },
+    "rust-analyzer.cargo.extraEnv": {
+        "RUSTUP_TOOLCHAIN": "esp"
+    },
     "cSpell.words": [
         "BAUDRATE",
+        "defmt",
         "Flickable",
         "gpio",
         "mosi",
@@ -14,5 +25,5 @@
     "cSpell.enableFiletypes": [
         "slint"
     ],
-    "slint.preview.providedByEditor": true
+    "slint.preview.providedByEditor": true,
 }

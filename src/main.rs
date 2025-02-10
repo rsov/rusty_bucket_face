@@ -6,9 +6,11 @@ extern crate alloc;
 pub mod cst816s;
 
 use alloc::{boxed::Box, rc::Rc};
-use core::{cell::RefCell, default::Default, mem::MaybeUninit};
+use core::{cell::RefCell, default::Default};
+use cst816s::CST816S;
 use embassy_executor::Spawner;
-use embassy_time::{Duration, Timer};
+use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel};
+use embassy_time::{Duration, Instant, Timer};
 use embedded_graphics_core::{
     draw_target::DrawTarget,
     pixelcolor::raw::RawU16,
@@ -18,18 +20,19 @@ use embedded_graphics_core::{
 use embedded_hal_bus::spi::RefCellDevice;
 use esp_backtrace as _;
 use esp_hal::{
+    clock::CpuClock,
     delay::Delay,
-    gpio::{self, Input, Io, Output, Pull},
-    i2c::I2c,
-    interrupt,
-    peripherals::{self, TWAI0},
-    prelude::*,
-    spi::{self, master::Spi},
-    timer::{systimer::SystemTimer, timg::TimerGroup},
+    gpio::{self, Input, Output, Pull},
+    i2c::master::I2c,
+    interrupt, peripherals,
+    spi::{master::Spi, Mode},
+    time::RateExtU32,
     twai::{self, TwaiMode, TwaiRx},
+    Async,
 };
 use esp_println::println;
 use gc9a01::{mode::BasicMode, prelude::*, Gc9a01, SPIDisplayInterface};
+use log::info;
 use slint::platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton};
 
 slint::include_modules!();
@@ -37,56 +40,54 @@ slint::include_modules!();
 const WINDOW_WIDTH: i32 = 240;
 const WINDOW_HEIGHT: i32 = 240;
 
+const CHANNEL: Channel<NoopRawMutex, slint::platform::WindowEvent, 3> =
+    Channel::<NoopRawMutex, slint::platform::WindowEvent, 3>::new();
+
 #[esp_hal_embassy::main]
 async fn main(spawner: Spawner) {
-    // ------------------------ MCU SET UP ------------------------
-    const HEAP_SIZE: usize = 32 * 1024;
-    static mut HEAP: MaybeUninit<[u8; HEAP_SIZE]> = MaybeUninit::uninit();
+    esp_println::println!("Init!");
 
-    unsafe {
-        esp_alloc::HEAP.add_region(esp_alloc::HeapRegion::new(
-            HEAP.as_mut_ptr() as *mut u8,
-            HEAP_SIZE,
-            esp_alloc::MemoryCapability::Internal.into(),
-        ));
-    }
+    esp_println::logger::init_logger_from_env();
+    info!("Logger is setup");
+    // ------------------------ MCU SET UP ------------------------
+    let config = esp_hal::Config::default().with_cpu_clock(CpuClock::default());
+    let peripherals = esp_hal::init(config);
+
+    esp_alloc::heap_allocator!(72 * 1024);
 
     // setup logger
     // To change the log_level change the env section in .cargo/config.toml
     // or remove it and set ESP_LOGLEVEL manually before running cargo run
     // this requires a clean rebuild because of https://github.com/rust-lang/cargo/issues/10358
-    esp_println::logger::init_logger_from_env();
-    log::info!("Logger is setup");
+
     println!("Hello world!");
 
-    let peripherals = esp_hal::init(esp_hal::Config::default());
-    // let system = SystemControl::new(peripherals.SYSTEM);
-
-    // let clocks = ClockControl::max(system.clock_control).freeze();
     let mut delay = Delay::new();
 
-    let timg0 = TimerGroup::new(peripherals.TIMG0);
-    esp_hal_embassy::init(timg0.timer0);
-
-    let io = Io::new(peripherals.GPIO, peripherals.IO_MUX);
+    let timer0 = esp_hal::timer::systimer::SystemTimer::new(peripherals.SYSTIMER);
+    esp_hal_embassy::init(timer0.alarm0);
 
     // ------------------------ DISPLAY SET UP ------------------------
-    Output::new(io.pins.gpio18, gpio::Level::High);
+    Output::new(peripherals.GPIO18, gpio::Level::High);
 
-    let sck = io.pins.gpio48;
-    let mosi = io.pins.gpio38;
-    let miso = io.pins.gpio47;
+    let sck = peripherals.GPIO48;
+    let mosi = peripherals.GPIO38;
+    let miso = peripherals.GPIO47;
 
-    let cs_output = Output::new(io.pins.gpio21, gpio::Level::Low);
-    let dc_output = Output::new(io.pins.gpio10, gpio::Level::Low);
-    let mut led_reset = Output::new(io.pins.gpio17, gpio::Level::Low);
+    let cs_output = Output::new(peripherals.GPIO21, gpio::Level::Low);
+    let dc_output = Output::new(peripherals.GPIO10, gpio::Level::Low);
+    let mut led_reset = Output::new(peripherals.GPIO17, gpio::Level::Low);
 
-    let spi = Spi::new(peripherals.SPI2, 40u32.MHz(), spi::SpiMode::Mode0).with_pins(
-        sck,
-        mosi,
-        miso,
-        gpio::NoPin,
-    );
+    let spi = Spi::new(
+        peripherals.SPI2,
+        esp_hal::spi::master::Config::default()
+            .with_frequency(100.kHz())
+            .with_mode(Mode::_0),
+    )
+    .unwrap()
+    .with_miso(miso)
+    .with_mosi(mosi)
+    .with_sck(sck);
 
     let spi_bus = RefCell::new(spi);
     let spi_device = RefCellDevice::new_no_delay(&spi_bus, cs_output).unwrap();
@@ -106,17 +107,22 @@ async fn main(spawner: Spawner) {
 
     // Create a new peripheral object with the described wiring and standard
     // I2C clock speed:
-    let i2c = I2c::new(
-        peripherals.I2C0,
-        io.pins.gpio11, // SDA
-        io.pins.gpio12, // SCL
-        100u32.kHz(),
-    );
-    let touch_int = Input::new(io.pins.gpio6, Pull::Up);
-    let touch_rst = Output::new(io.pins.gpio7, gpio::Level::Low);
+    let i2c = I2c::new(peripherals.I2C0, {
+        esp_hal::i2c::master::Config::default().with_frequency(100u32.kHz())
+    })
+    .unwrap()
+    .with_sda(peripherals.GPIO11)
+    .with_scl(peripherals.GPIO12)
+    .into_async();
+
+    let touch_int = Input::new(peripherals.GPIO6, Pull::Up);
+    let touch_rst = Output::new(peripherals.GPIO7, gpio::Level::Low);
 
     let mut touchpad = cst816s::CST816S::new(i2c, touch_int, touch_rst);
     touchpad.setup(&mut delay).unwrap();
+
+    // let mut touchpad = Cst816s::new(i2c, delay);
+    // touchpad.reset(&mut touch_rst, &mut delay).unwrap();
 
     // ------------------------ SLINT SET UP ------------------------
 
@@ -128,6 +134,7 @@ async fn main(spawner: Spawner) {
 
     slint::platform::set_platform(Box::new(EspBackend {
         window: window.clone(),
+        instant: Instant::now(),
     }))
     .unwrap();
 
@@ -140,21 +147,22 @@ async fn main(spawner: Spawner) {
 
     // ------------------------ CAN Bus (TWAI) ------------------------
 
-    let can_tx_pin = io.pins.gpio43; // Needs it?
-    let can_rx_pin = io.pins.gpio44;
+    let can_tx_pin = peripherals.GPIO43; // Needs it?
+    let can_rx_pin = peripherals.GPIO44;
 
     // The speed of the CAN bus.
     const CAN_BAUDRATE: twai::BaudRate = twai::BaudRate::B1000K;
 
     // Begin configuring the TWAI peripheral. The peripheral is in a reset like
     // state that prevents transmission but allows configuration.
-    let mut can_config = twai::TwaiConfiguration::new_async_no_transceiver(
+    let mut can_config = twai::TwaiConfiguration::new_no_transceiver(
         peripherals.TWAI0,
         can_tx_pin,
         can_rx_pin,
         CAN_BAUDRATE,
         TwaiMode::Normal,
-    );
+    )
+    .into_async();
 
     // Partially filter the incoming messages to reduce overhead of receiving
     // undesired messages. Note that due to how the hardware filters messages,
@@ -181,32 +189,19 @@ async fn main(spawner: Spawner) {
     .unwrap();
 
     spawner.spawn(receiver(rx, app_window)).ok();
+    spawner.spawn(touch(touchpad)).ok();
+    println!("spawned??");
 
     // ------------------------ APP ------------------------
+
     loop {
         slint::platform::update_timers_and_animations();
+        println!("main loop");
 
-        if let Some(evt) = touchpad.read_one_touch_event(true) {
-            // TODO: Sync with rotation of the screen, subtraction is a hack
-            // dunno if height of width should be used here
-            let position = slint::LogicalPosition::new(
-                (WINDOW_WIDTH - evt.x) as _,
-                (WINDOW_HEIGHT - evt.y) as _,
-            );
-
-            if evt.action == 0 {
-                window.dispatch_event(slint::platform::WindowEvent::PointerPressed {
-                    position,
-                    button: PointerEventButton::Left,
-                });
-            } else if evt.action == 2 {
-                window.dispatch_event(slint::platform::WindowEvent::PointerMoved { position });
-            } else if evt.action == 1 {
-                window.dispatch_event(slint::platform::WindowEvent::PointerReleased {
-                    position,
-                    button: PointerEventButton::Left,
-                });
-            }
+        println!("EMPTY? {:}", CHANNEL.is_empty());
+        if !CHANNEL.is_empty() {
+            let evt = CHANNEL.len();
+            println!("YIPPY {:?}", evt);
         }
 
         window.draw_if_needed(|renderer| {
@@ -215,15 +210,50 @@ async fn main(spawner: Spawner) {
 
         if window.has_active_animations() {
             continue;
-        } else {
-            // Needs to have await otherwise won't spawn tasks??
-            Timer::after(Duration::from_millis(1)).await;
+        }
+        Timer::after(Duration::from_millis(250)).await;
+    }
+}
+
+#[embassy_executor::task]
+async fn touch(mut touchpad: CST816S<I2c<'static, Async>, Input<'static>, Output<'static>>) -> ! {
+    println!("touch loop");
+
+    loop {
+        if let Some(evt) = touchpad.read_one_touch_event(true) {
+            // println!("GOT EVENT {:?}", evt);
+            // TODO: Sync with rotation of the screen, subtraction is a hack
+            // dunno if height of width should be used here
+            let position = slint::LogicalPosition::new(
+                (WINDOW_WIDTH - evt.x) as _,
+                (WINDOW_HEIGHT - evt.y) as _,
+            );
+            println!("got touched");
+            if evt.action == 0 {
+                CHANNEL
+                    .send(slint::platform::WindowEvent::PointerPressed {
+                        position,
+                        button: PointerEventButton::Left,
+                    })
+                    .await;
+            } else if evt.action == 2 {
+                CHANNEL
+                    .send(slint::platform::WindowEvent::PointerMoved { position })
+                    .await;
+            } else if evt.action == 1 {
+                CHANNEL
+                    .send(slint::platform::WindowEvent::PointerReleased {
+                        position,
+                        button: PointerEventButton::Left,
+                    })
+                    .await;
+            }
         }
     }
 }
 
 #[embassy_executor::task]
-async fn receiver(mut _rx: TwaiRx<'static, TWAI0, esp_hal::Async>, app_window: AppWindow) -> ! {
+async fn receiver(mut _rx: TwaiRx<'static, Async>, app_window: AppWindow) -> ! {
     println!("CAN Listening..");
     let mut afr: f32 = 0.500;
 
@@ -254,6 +284,7 @@ async fn receiver(mut _rx: TwaiRx<'static, TWAI0, esp_hal::Async>, app_window: A
 
 struct EspBackend {
     window: Rc<MinimalSoftwareWindow>,
+    instant: Instant,
 }
 
 impl slint::platform::Platform for EspBackend {
@@ -264,9 +295,7 @@ impl slint::platform::Platform for EspBackend {
     }
 
     fn duration_since_start(&self) -> core::time::Duration {
-        core::time::Duration::from_millis(
-            SystemTimer::now() / (SystemTimer::ticks_per_second() / 1000),
-        )
+        self.instant.elapsed().into()
     }
 }
 

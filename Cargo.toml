@@ -10,58 +10,50 @@ license = "MIT OR Apache-2.0"
 
 # --- ESP ---
 
-esp-hal = { version = "0.21.0", features = [
-    "log",
-    "esp32s3",
-] }
+esp-hal = { version = "0.23.1", features = ["log", "esp32s3", "unstable"] }
 
-esp-backtrace = { version = "0.14.2", features = [
+esp-backtrace = { version = "0.15.0", features = [
     "esp32s3",
     "exception-handler",
     "panic-handler",
     "println",
 ] }
 
-esp-println = { version = "0.12.0", features = ["esp32s3", "log"] }
+esp-println = { version = "0.13.0", features = ["esp32s3", "log"] }
 
-esp-hal-embassy = { version = "0.4.0", features = ["esp32s3"] }
+esp-hal-embassy = { version = "0.6.0", features = ["esp32s3"] }
 
-esp-alloc = { version = "0.5.0" }
+esp-alloc = { version = "0.6.0" }
 
-esp-wifi = { version = "0.10.1", features = [
-    "esp32s3",
-    "phy-enable-usb",
-    "utils",
-    "wifi-default",
-] }
-
-xtensa-lx-rt = { version = "0.17.1", features = [
+xtensa-lx-rt = { version = "0.18.0", features = [
     "esp32s3",
     "float-save-restore",
 ] }
 
 
-
 # --- HAL / Drivers ---
 
-gc9a01-rs = "0.4.1"
+gc9a01-rs = "0.4.2"
+# TODO: Maybe get this one working
+# cst816s-rs = { git = "https://github.com/IniterWorker/cst816s.git", branch = "master" }
+
 embedded-graphics-core = "0.4.0"
 
 embedded-io = "0.6.1"
 embedded-hal = "1.0.0"
-embedded-hal-bus = "0.2.0"
+embedded-hal-bus = "0.3.0"
 embedded-hal-async = "1.0.0"
 
-embassy-time = { version = "0.3.2", features = ["generic-queue-8"] }
-embassy-executor = { version = "0.6.0", features = ["task-arena-size-262144"] }
-
+embassy-time = { version = "0.4.0", features = ["generic-queue-8"] }
+embassy-futures = "0.1.1"
+embassy-executor = { version = "0.7.0", features = ["task-arena-size-262144"] }
 
 
 # --- App dependencies ---
 
-log = { version = "0.4.21" }
+log = { version = "0.4.25" }
 
-slint = { version = "1.8.0", default-features = false, features = [
+slint = { version = "1.9.2", default-features = false, features = [
     "compat-1-2",
     "unsafe-single-threaded",
     "libm",
@@ -69,6 +61,7 @@ slint = { version = "1.8.0", default-features = false, features = [
 ] }
 
 static_cell = "2.1.0"
+embassy-sync = "0.6.2"
 
 
 [profile.dev]
@@ -86,4 +79,4 @@ opt-level = 's'
 overflow-checks = false
 
 [build-dependencies]
-slint-build = "1.8.0"
+slint-build = "1.9.2"
