@@ -12,18 +12,18 @@ license = "MIT OR Apache-2.0"
 
 esp-hal = { version = "0.23.1", features = ["log", "esp32s3", "unstable"] }
 
-esp-backtrace = { version = "0.15.0", features = [
+esp-backtrace = { version = "0.15.1", features = [
     "esp32s3",
     "exception-handler",
     "panic-handler",
     "println",
 ] }
 
-esp-println = { version = "0.13.0", features = ["esp32s3", "log"] }
+esp-println = { version = "0.13.1", features = ["esp32s3", "log"] }
 
 esp-hal-embassy = { version = "0.6.0", features = ["esp32s3"] }
 
-esp-alloc = { version = "0.6.0" }
+esp-alloc = { version = "0.7.0" }
 
 xtensa-lx-rt = { version = "0.18.0", features = [
     "esp32s3",
@@ -51,9 +51,9 @@ embassy-executor = { version = "0.7.0", features = ["task-arena-size-262144"] }
 
 # --- App dependencies ---
 
-log = { version = "0.4.25" }
+log = { version = "0.4.26" }
 
-slint = { version = "1.9.2", default-features = false, features = [
+slint = { version = "1.10.0", default-features = false, features = [
     "compat-1-2",
     "unsafe-single-threaded",
     "libm",
@@ -79,4 +79,4 @@ opt-level = 's'
 overflow-checks = false
 
 [build-dependencies]
-slint-build = "1.9.2"
+slint-build = { version = "1.10.0", features = ["sdf-fonts"] }
