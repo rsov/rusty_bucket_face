@@ -1,9 +1,6 @@
 fn main() {
     linker_be_nice();
 
-    // make sure linkall.x is the last linker script (otherwise might cause problems with flip-link)
-    println!("cargo:rustc-link-arg=-Tlinkall.x");
-
     slint_build::compile_with_config(
         "ui/main.slint",
         slint_build::CompilerConfiguration::new()
@@ -12,6 +9,9 @@ fn main() {
             .with_style("cosmic-dark".into()),
     )
     .unwrap();
+
+    // make sure linkall.x is the last linker script (otherwise might cause problems with flip-link)
+    println!("cargo:rustc-link-arg=-Tlinkall.x");
 }
 
 fn linker_be_nice() {
