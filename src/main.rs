@@ -9,7 +9,7 @@ use alloc::{boxed::Box, rc::Rc};
 use core::{cell::RefCell, default::Default};
 use cst816s::CST816S;
 use embassy_executor::Spawner;
-use embassy_sync::{blocking_mutex::raw::NoopRawMutex, channel::Channel};
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, channel::Channel};
 use embassy_time::{Duration, Instant, Timer};
 use embedded_graphics_core::{
     draw_target::DrawTarget,
@@ -40,13 +40,10 @@ slint::include_modules!();
 const WINDOW_WIDTH: i32 = 240;
 const WINDOW_HEIGHT: i32 = 240;
 
-const CHANNEL: Channel<NoopRawMutex, slint::platform::WindowEvent, 3> =
-    Channel::<NoopRawMutex, slint::platform::WindowEvent, 3>::new();
+static CHANNEL: Channel<CriticalSectionRawMutex, slint::platform::WindowEvent, 3> = Channel::new();
 
 #[esp_hal_embassy::main]
 async fn main(spawner: Spawner) {
-    esp_println::println!("Init!");
-
     esp_println::logger::init_logger_from_env();
     info!("Logger is setup");
     // ------------------------ MCU SET UP ------------------------
