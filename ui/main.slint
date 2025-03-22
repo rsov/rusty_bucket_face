@@ -1,5 +1,5 @@
-import { AboutSlint, Button, VerticalBox, Palette, ScrollView, HorizontalBox } from "std-widgets.slint";
-import { DisplayLimits, AppFonts } from "./common.slint";
+import { AboutSlint } from "std-widgets.slint";
+import { DisplayLimits } from "./common.slint";
 import { O2Page } from "o2_page.slint";
 
 component Carousel inherits FocusScope {
@@ -143,30 +143,32 @@ export component AppWindow inherits Window {
                     }
                 }
 
-                HorizontalLayout {
-                    height: 240px;
-                    alignment: center;
-                    VerticalLayout {
-                        alignment: center;
-                        Text {
-                            text: "Ferris the\nrustacean";
-                            font-size: 24px;
-                        }
-                    }
-                }
+                // TODO: This causes flash errors????
 
-                HorizontalLayout {
-                    height: 240px;
-                    alignment: center;
-                    VerticalLayout {
-                        alignment: center;
-                        Image {
-                            width: 100%;
-                            height: 100px;
-                            source: @image-url("./assets/rustacean-flat-happy.png");
-                        }
-                    }
-                }
+                // HorizontalLayout {
+                //     height: 240px;
+                //     alignment: center;
+                //     VerticalLayout {
+                //         alignment: center;
+                //         Text {
+                //             text: "Ferris the\nrustacean";
+                //             font-size: 24px;
+                //         }
+                //     }
+                // }
+
+                // HorizontalLayout {
+                //     height: 240px;
+                //     alignment: center;
+                //     VerticalLayout {
+                //         alignment: center;
+                //         Image {
+                //             width: 100%;
+                //             height: 100px;
+                //             source: @image-url("./assets/rustacean-flat-happy.png");
+                //         }
+                //     }
+                // }
             }
         }
     }

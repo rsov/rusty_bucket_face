@@ -1,5 +1,6 @@
 fn main() {
     linker_be_nice();
+    println!("cargo:rustc-link-arg=-Tdefmt.x");
 
     slint_build::compile_with_config(
         "ui/main.slint",

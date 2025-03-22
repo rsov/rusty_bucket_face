@@ -6,20 +6,20 @@ authors = ["Ruslan Sovinskyy <ruslan.sovinskyy@gmail.com>"]
 edition = "2021"
 license = "MIT OR Apache-2.0"
 
+
+[[bin]]
+name = "rusty_bucket_face"
+path = "./src/main.rs"
+
 [dependencies]
 
 # --- ESP ---
 
-esp-hal = { version = "0.23.1", features = ["log", "esp32s3", "unstable"] }
-
-esp-backtrace = { version = "0.15.1", features = [
+esp-hal = { version = "0.23.1", default-features = false, features = [
+    "defmt",
     "esp32s3",
-    "exception-handler",
-    "panic-handler",
-    "println",
+    "unstable",
 ] }
-
-esp-println = { version = "0.13.1", features = ["esp32s3", "log"] }
 
 esp-hal-embassy = { version = "0.6.0", features = ["esp32s3"] }
 
@@ -30,14 +30,19 @@ xtensa-lx-rt = { version = "0.18.0", features = [
     "float-save-restore",
 ] }
 
+# --- Debug / loggers ---
+
+defmt = "0.3.10"
+panic-rtt-target = { version = "0.2.0", features = ["defmt"] }
+rtt-target = { version = "0.6.1", features = ["defmt"] }
+
 
 # --- HAL / Drivers ---
 
 gc9a01-rs = "0.4.2"
-# TODO: Maybe get this one working
-# cst816s-rs = { git = "https://github.com/IniterWorker/cst816s.git", branch = "master" }
+# cst816s = {git = "https://github.com/tstellanova/cst816s.git"}
 
-embedded-graphics-core = "0.4.0"
+embedded-graphics = { version = "0.8.1", features = ["defmt"] }
 
 embedded-io = "0.6.1"
 embedded-hal = "1.0.0"
@@ -45,13 +50,15 @@ embedded-hal-bus = "0.3.0"
 embedded-hal-async = "1.0.0"
 
 embassy-time = { version = "0.4.0", features = ["generic-queue-8"] }
-embassy-futures = "0.1.1"
-embassy-executor = { version = "0.7.0", features = ["task-arena-size-262144"] }
+embassy-futures = { version = "0.1.1", features = ["defmt"] }
+embassy-embedded-hal = { version = "0.3.0", features = ["defmt"] }
+embassy-executor = { version = "0.7.0", features = [
+    "defmt",
+    "task-arena-size-20480",
+] }
 
 
 # --- App dependencies ---
-
-log = { version = "0.4.26" }
 
 slint = { version = "1.10.0", default-features = false, features = [
     "compat-1-2",

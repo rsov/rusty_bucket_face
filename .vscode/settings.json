@@ -26,4 +26,5 @@
         "slint"
     ],
     "slint.preview.providedByEditor": true,
+    "editor.formatOnSave": true,
 }

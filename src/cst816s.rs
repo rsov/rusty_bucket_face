@@ -1,18 +1,17 @@
 // From https://github.com/tstellanova/cst816s
-#![no_std]
 
 use core::fmt::Debug;
 
 use embedded_hal as hal;
 use embedded_hal::delay::DelayNs;
 
+use defmt::Format;
+
 /// Errors in this crate
 #[derive(Debug)]
 pub enum Error<CommE, PinE> {
     Comm(CommE),
     Pin(PinE),
-
-    GenericError,
 }
 
 pub struct CST816S<I2C, PINT, RST> {
@@ -22,7 +21,7 @@ pub struct CST816S<I2C, PINT, RST> {
     blob_buf: [u8; BLOB_BUF_LEN],
 }
 
-#[derive(Debug)]
+#[derive(Debug, Format)]
 pub struct TouchEvent {
     pub x: i32,
     pub y: i32,
@@ -41,7 +40,7 @@ pub struct TouchEvent {
 impl<I2C, PINT, RST, CommE, PinE> CST816S<I2C, PINT, RST>
 where
     I2C: hal::i2c::I2c<Error = CommE>,
-    PINT: hal::digital::InputPin,
+    PINT: hal::digital::InputPin + embedded_hal_async::digital::Wait,
     RST: hal::digital::StatefulOutputPin<Error = PinE>,
 {
     pub fn new(port: I2C, interrupt_pin: PINT, reset_pin: RST) -> Self {
@@ -54,10 +53,7 @@ where
     }
 
     /// setup the driver to communicate with the device
-    pub fn setup(
-        &mut self,
-        delay_source: &mut impl DelayNs,
-    ) -> Result<(), Error<CommE, PinE>> {
+    pub fn setup(&mut self, delay_source: &mut impl DelayNs) -> Result<(), Error<CommE, PinE>> {
         // reset the chip
         self.pin_rst.set_low().map_err(Error::Pin)?;
         delay_source.delay_us(20_000);
@@ -70,7 +66,7 @@ where
     }
 
     /// Read enough registers to fill our read buf
-    pub fn read_registers(&mut self) -> Result<(), Error<CommE, PinE>> {
+    pub fn _read_registers(&mut self) -> Result<(), Error<CommE, PinE>> {
         let read_reg = [Self::REG_FIRST; 1];
         self.i2c
             .write_read(Self::DEFAULT_I2C_ADDRESS, &read_reg, self.blob_buf.as_mut())
@@ -132,11 +128,18 @@ where
     /// On some devices, attempting to read registers when there is no data available results
     /// in a hang in the i2c read.
     ///
-    pub fn read_one_touch_event(&mut self, check_int_pin: bool) -> Option<TouchEvent> {
+    pub async fn read_one_touch_event(&mut self, check_int_pin: bool) -> Option<TouchEvent> {
         let mut one_event: Option<TouchEvent> = None;
         // the interrupt pin should typically be low if there is data available;
         // otherwise, attempting to read i2c will cause a stall
-        let data_available = !check_int_pin || self.pin_int.is_low().unwrap_or(false);
+
+        let data_available = if check_int_pin {
+            let _ = self.pin_int.wait_for_low().await;
+            true
+        } else {
+            true
+        };
+
         if data_available {
             if self.read_truncated_registers().is_ok() {
                 let gesture_id = self.blob_buf[Self::GESTURE_ID_OFF];
@@ -189,7 +192,7 @@ where
 const BLOB_BUF_LEN: usize = (10 * 6) + 3; // (MAX_TOUCH_CHANNELS * RAW_TOUCH_EVENT_LEN) + GESTURE_HEADER_LEN;
 const ONE_EVENT_LEN: usize = 6 + 3; // RAW_TOUCH_EVENT_LEN + GESTURE_HEADER_LEN
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Format)]
 #[repr(u8)]
 pub enum TouchGesture {
     None = 0x00,
