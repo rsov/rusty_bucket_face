@@ -111,8 +111,8 @@ where
         touch.y = (buf[Self::TOUCH_Y_L_OFF] as i32) | (((touch_y_h_and_finger & 0x0F) as i32) << 8);
 
         // action of touch (0 = down, 1 = up, 2 = contact)
-        touch.action = (touch_x_h_and_action >> 6) as u8;
-        touch.finger_id = (touch_y_h_and_finger >> 4) as u8;
+        touch.action = touch_x_h_and_action >> 6;
+        touch.finger_id = touch_y_h_and_finger >> 4;
 
         //  Compute touch pressure and area
         touch.pressure = buf[Self::TOUCH_PRESURE_OFF];
@@ -121,12 +121,13 @@ where
         Some(touch)
     }
 
-    /// The main method for getting the current touch event.
-    /// Returns a touch event if available.
+    ///  The main method for getting the current touch event.
+    ///  Returns a touch event if available.
     ///
-    /// - `check_int_pin` -- True if we should check the interrupt pin before attempting i2c read.
-    /// On some devices, attempting to read registers when there is no data available results
-    /// in a hang in the i2c read.
+    ///  - `check_int_pin` -- True if we should check the interrupt pin before attempting i2c read.
+    ///
+    ///  On some devices, attempting to read registers when there is no data available results
+    ///    in a hang in the i2c read.
     ///
     pub async fn read_one_touch_event(&mut self, check_int_pin: bool) -> Option<TouchEvent> {
         let mut one_event: Option<TouchEvent> = None;
@@ -140,22 +141,21 @@ where
             true
         };
 
-        if data_available {
-            if self.read_truncated_registers().is_ok() {
-                let gesture_id = self.blob_buf[Self::GESTURE_ID_OFF];
-                let num_points = (self.blob_buf[Self::NUM_POINTS_OFF] & 0x0F) as usize;
-                if num_points <= Self::MAX_TOUCH_CHANNELS {
-                    //In testing with a PineTime we only ever seem to get one event
-                    let evt_start: usize = Self::GESTURE_HEADER_LEN;
-                    if let Some(mut evt) = Self::touch_event_from_data(
-                        self.blob_buf[evt_start..evt_start + Self::RAW_TOUCH_EVENT_LEN].as_ref(),
-                    ) {
-                        evt.gesture = gesture_id.into();
-                        one_event = Some(evt);
-                    }
+        if data_available && self.read_truncated_registers().is_ok() {
+            let gesture_id = self.blob_buf[Self::GESTURE_ID_OFF];
+            let num_points = (self.blob_buf[Self::NUM_POINTS_OFF] & 0x0F) as usize;
+            if num_points <= Self::MAX_TOUCH_CHANNELS {
+                //In testing with a PineTime we only ever seem to get one event
+                let evt_start: usize = Self::GESTURE_HEADER_LEN;
+                if let Some(mut evt) = Self::touch_event_from_data(
+                    self.blob_buf[evt_start..evt_start + Self::RAW_TOUCH_EVENT_LEN].as_ref(),
+                ) {
+                    evt.gesture = gesture_id.into();
+                    one_event = Some(evt);
                 }
             }
         }
+
         one_event
     }
 
