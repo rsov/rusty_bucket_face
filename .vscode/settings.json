@@ -15,12 +15,17 @@
         "defmt",
         "Flickable",
         "gpio",
+        "Haltech",
         "mosi",
         "pixelcolor",
+        "SCLK",
         "slint",
+        "systimer",
         "touchpad",
         "twai",
-        "uninit"
+        "uninit",
+        "Waveshare",
+        "Wokwi"
     ],
     "cSpell.enableFiletypes": [
         "slint"
