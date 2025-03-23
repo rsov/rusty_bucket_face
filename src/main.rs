@@ -156,8 +156,11 @@ async fn main(spawner: Spawner) {
     .into_async();
 
     // TODO: Get this working?? only allows lambda
+    // 0b01101100000
+    // 0b10001110000
+    //   xxx011x0000
     const FILTER: twai::filter::SingleStandardFilter =
-        twai::filter::SingleStandardFilter::new(b"10001110000", b"x", [b"xxxxxxxx", b"xxxxxxxx"]);
+        twai::filter::SingleStandardFilter::new(b"xxx011x0000", b"x", [b"xxxxxxxx", b"xxxxxxxx"]);
     can_config.set_filter(FILTER);
 
     // Start the peripheral. This locks the configuration settings of the peripheral
@@ -246,6 +249,14 @@ async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: AppWindow) -> ! {
                     let raw_value: u16 = ((frame.data()[0] as u16) << 8) | (frame.data()[1] as u16);
                     let lambda_1 = raw_value as f32 / 1000.0;
                     app_window.set_o2_lambda_reading(lambda_1);
+                }
+
+                let boost_id = twai::Id::from(twai::StandardId::new(0x360).unwrap());
+                if boost_id == id.into() {
+                    // TODO: Skill issue, there's a better way to do this
+                    let raw_value: u16 = ((frame.data()[2] as u16) << 8) | (frame.data()[3] as u16);
+                    let boost = raw_value as i32 / 10;
+                    app_window.set_manifold_pressure_reading(boost);
                 }
             }
             Err(e) => {
