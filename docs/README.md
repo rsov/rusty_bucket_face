@@ -7,6 +7,7 @@
 
 ESP hal docs https://docs.esp-rs.org/esp-hal/
 
+Haltech docs https://support.haltech.com/portal/en/kb/articles/haltech-can-ecu-broadcast-protocol
 
 ### Display
 
@@ -40,8 +41,9 @@ Connection to Arduino Nano ESP32
 | TP_SDA  | A4      | Grey   | 11   |
 | TP_SCL  | A5      | Blue   | 12   |
 | TP_INT  | D3      | Yellow | 06   |
-| TP_RST  | D4      | Purple | 06   |
-| CAN RX  | D1      |        | 44   |
+| TP_RST  | D4      | Purple | 07   |
+| CAN RX  | D6      |        | 09   |
+| CAN TX  | D5      |        | 08   |
 
 
 

@@ -13,6 +13,7 @@ use defmt::info;
 use display_line_buffer_providers::DrawBuffer;
 use embassy_executor::Spawner;
 use embassy_time::{Duration, Instant, Timer};
+use embedded_can::Frame;
 use embedded_hal_bus::spi::ExclusiveDevice;
 use esp_hal::{
     clock::CpuClock,
@@ -140,31 +141,23 @@ async fn main(spawner: Spawner) {
 
     // ------------------------ CAN Bus (TWAI) ------------------------
 
-    let can_tx_pin = peripherals.GPIO43; // Needs it?
-    let can_rx_pin = peripherals.GPIO44;
-
-    // The speed of the CAN bus.
-    const CAN_BAUDRATE: twai::BaudRate = twai::BaudRate::B1000K;
+    let can_tx_pin = peripherals.GPIO8; // Needs it?
+    let can_rx_pin = peripherals.GPIO9;
 
     // Begin configuring the TWAI peripheral. The peripheral is in a reset like
     // state that prevents transmission but allows configuration.
-    let mut can_config = twai::TwaiConfiguration::new_no_transceiver(
+    let mut can_config = twai::TwaiConfiguration::new(
         peripherals.TWAI0,
-        can_tx_pin,
         can_rx_pin,
-        CAN_BAUDRATE,
-        TwaiMode::Normal,
+        can_tx_pin,
+        twai::BaudRate::B1000K,
+        TwaiMode::SelfTest,
     )
     .into_async();
 
-    // Partially filter the incoming messages to reduce overhead of receiving
-    // undesired messages. Note that due to how the hardware filters messages,
-    // standard ids and extended ids may both match a filter. Frame ids should
-    // be explicitly checked in the application instead of fully relying on
-    // these partial acceptance filters to exactly match. A filter that matches
-    // standard ids of an even value.
+    // TODO: Get this working?? only allows lambda
     const FILTER: twai::filter::SingleStandardFilter =
-        twai::filter::SingleStandardFilter::new(b"xxxxxxxxxx0", b"x", [b"xxxxxxxx", b"xxxxxxxx"]);
+        twai::filter::SingleStandardFilter::new(b"10001110000", b"x", [b"xxxxxxxx", b"xxxxxxxx"]);
     can_config.set_filter(FILTER);
 
     // Start the peripheral. This locks the configuration settings of the peripheral
@@ -232,31 +225,33 @@ async fn touch(
 }
 
 #[embassy_executor::task]
-async fn receiver(mut _rx: TwaiRx<'static, Async>, app_window: AppWindow) -> ! {
+async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: AppWindow) -> ! {
     info!("✓ CAN task");
 
-    let mut afr: f32 = 0.500;
+    app_window.set_o2_lambda_reading(0.5);
 
     loop {
-        if afr > 2.0 {
-            afr = 0.5;
+        let frame = rx.receive_async().await;
+
+        match frame {
+            Ok(frame) => {
+                info!("[CAN] {:?}", frame);
+
+                // TODO: This is a bit cumbersome, implement match or something
+                let id: embedded_can::Id = frame.id();
+                let lambda_id = twai::Id::from(twai::StandardId::new(0x470).unwrap());
+
+                if lambda_id == id.into() {
+                    // TODO: Skill issue, there's a better way to do this
+                    let raw_value: u16 = ((frame.data()[0] as u16) << 8) | (frame.data()[1] as u16);
+                    let lambda_1 = raw_value as f32 / 1000.0;
+                    app_window.set_o2_lambda_reading(lambda_1);
+                }
+            }
+            Err(e) => {
+                info!("[CAN] Error: {:?}", e);
+            }
         }
-        afr += 0.01;
-
-        // Needs to have await otherwise won't spawn the task??
-        Timer::after(Duration::from_millis(10)).await;
-
-        app_window.set_o2_lambda_reading(afr);
-
-        // let frame = rx.receive_async().await;
-        // match frame {
-        //     Ok(frame) => {
-        //         println!("Received a frame: {:?}", frame);
-        //     }
-        //     Err(e) => {
-        //         println!("Receive error: {:?}", e);
-        //     }
-        // }
     }
 }
 

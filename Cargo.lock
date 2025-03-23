@@ -4299,6 +4299,7 @@ dependencies = [
  "embassy-futures",
  "embassy-sync",
  "embassy-time",
+ "embedded-can",
  "embedded-graphics",
  "embedded-hal 1.0.0",
  "embedded-hal-async",
