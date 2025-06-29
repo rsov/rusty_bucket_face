@@ -23,7 +23,7 @@ esp-hal = { version = "0.23.1", default-features = false, features = [
 
 esp-hal-embassy = { version = "0.6.0", features = ["esp32s3"] }
 
-esp-alloc = { version = "0.7.0" }
+esp-alloc = { version = "0.8.0" }
 
 xtensa-lx-rt = { version = "0.18.0", features = [
     "esp32s3",
@@ -32,7 +32,7 @@ xtensa-lx-rt = { version = "0.18.0", features = [
 
 # --- Debug / loggers ---
 
-defmt = "0.3.10"
+defmt = "1.0.1"
 panic-rtt-target = { version = "0.2.0", features = ["defmt"] }
 rtt-target = { version = "0.6.1", features = ["defmt"] }
 
@@ -67,8 +67,8 @@ slint = { version = "1.12.1", default-features = false, features = [
     "renderer-software",
 ] }
 
-static_cell = "2.1.0"
-embassy-sync = "0.6.2"
+static_cell = "2.1.1"
+embassy-sync = "0.7.0"
 embedded-can = "0.4.1"
 
 
