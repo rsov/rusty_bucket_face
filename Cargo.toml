@@ -15,17 +15,17 @@ path = "./src/main.rs"
 
 # --- ESP ---
 
-esp-hal = { version = "0.23.1", default-features = false, features = [
+esp-hal = { version = "1.0.0-beta.1", default-features = false, features = [
     "defmt",
     "esp32s3",
     "unstable",
 ] }
 
-esp-hal-embassy = { version = "0.6.0", features = ["esp32s3"] }
+esp-hal-embassy = { version = "0.8.1", features = ["esp32s3"] }
 
 esp-alloc = { version = "0.8.0" }
 
-xtensa-lx-rt = { version = "0.18.0", features = [
+xtensa-lx-rt = { version = "0.19.0", features = [
     "esp32s3",
     "float-save-restore",
 ] }
