@@ -28,6 +28,9 @@ esp-bootloader-esp-idf = { version = "0.2.0", features = ["esp32s3", "defmt"] }
 
 esp-alloc = { version = "0.8.0" }
 
+esp-storage = { version = "0.7.0", features = ["esp32s3"] }
+
+
 xtensa-lx-rt = { version = "0.20.0", features = ["float-save-restore"] }
 
 # --- Debug / loggers ---
