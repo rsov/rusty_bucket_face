@@ -31,6 +31,7 @@ use panic_rtt_target as _;
 use slint::platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton, WindowEvent};
 
 slint::include_modules!();
+esp_bootloader_esp_idf::esp_app_desc!();
 
 const WINDOW_WIDTH: i32 = 240;
 const WINDOW_HEIGHT: i32 = 240;
