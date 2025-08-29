@@ -1,7 +1,7 @@
 // Stole from https://github.com/igiona/rs-watch/blob/main/src/ui_task/display_line_buffer_provider.rs
 
 use embedded_graphics::{
-    pixelcolor::{raw::RawU16, Rgb565},
+    pixelcolor::{Rgb565, raw::RawU16},
     prelude::{DrawTarget, Point, Size},
     primitives::Rectangle,
 };

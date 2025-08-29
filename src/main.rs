@@ -16,6 +16,7 @@ use embassy_time::{Duration, Instant, Timer};
 use embedded_can::Frame;
 use embedded_hal_bus::spi::ExclusiveDevice;
 use esp_hal::{
+    Async, Blocking,
     clock::CpuClock,
     delay::Delay,
     gpio::{self, Input, InputConfig, Output, OutputConfig, Pull},
@@ -24,11 +25,10 @@ use esp_hal::{
     time::Rate,
     timer::systimer::SystemTimer,
     twai::{self, TwaiMode, TwaiRx},
-    Async, Blocking,
 };
-use gc9a01::{prelude::*, Gc9a01, SPIDisplayInterface};
+use gc9a01::{Gc9a01, SPIDisplayInterface, prelude::*};
 use panic_rtt_target as _;
-use slint::platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton, WindowEvent};
+use slint::platform::{PointerEventButton, WindowEvent, software_renderer::MinimalSoftwareWindow};
 
 slint::include_modules!();
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -156,6 +156,7 @@ async fn main(spawner: Spawner) {
     // https://github.com/KortanZ/mcu-slint-demo/blob/main/src/ui.rs
 
     let app_window = AppWindow::new().unwrap();
+    let ui_handle = app_window.as_weak();
 
     info!("✓ Slint");
 
@@ -196,7 +197,7 @@ async fn main(spawner: Spawner) {
     info!("✓ Main Loop");
 
     spawner.spawn(touch(touchpad, window.clone())).ok();
-    spawner.spawn(receiver(rx, app_window)).ok();
+    spawner.spawn(receiver(rx, ui_handle)).ok();
 
     loop {
         slint::platform::update_timers_and_animations();
@@ -248,10 +249,12 @@ async fn touch(
 }
 
 #[embassy_executor::task]
-async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: AppWindow) -> ! {
+async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: slint::Weak<AppWindow>) -> ! {
     info!("✓ CAN task");
 
-    app_window.set_o2_lambda_reading(0.5);
+    if let Some(app_window) = app_window.upgrade() {
+        app_window.set_o2_lambda_reading(0.5);
+    }
 
     loop {
         let frame = rx.receive_async().await;
@@ -268,7 +271,9 @@ async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: AppWindow) -> ! {
                     // TODO: Skill issue, there's a better way to do this
                     let raw_value: u16 = ((frame.data()[0] as u16) << 8) | (frame.data()[1] as u16);
                     let lambda_1 = raw_value as f32 / 1000.0;
-                    app_window.set_o2_lambda_reading(lambda_1);
+                    if let Some(app_window) = app_window.upgrade() {
+                        app_window.set_o2_lambda_reading(lambda_1);
+                    }
                 }
 
                 let boost_id = twai::Id::from(twai::StandardId::new(0x360).unwrap());
@@ -276,7 +281,9 @@ async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: AppWindow) -> ! {
                     // TODO: Skill issue, there's a better way to do this
                     let raw_value: u16 = ((frame.data()[2] as u16) << 8) | (frame.data()[3] as u16);
                     let boost = raw_value as i32 / 10;
-                    app_window.set_manifold_pressure_reading(boost);
+                    if let Some(app_window) = app_window.upgrade() {
+                        app_window.set_manifold_pressure_reading(boost);
+                    }
                 }
             }
             Err(e) => {
