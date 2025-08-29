@@ -18,10 +18,10 @@ use embedded_hal_bus::spi::ExclusiveDevice;
 use esp_hal::{
     clock::CpuClock,
     delay::Delay,
-    gpio::{self, Input, Output, Pull},
+    gpio::{self, Input, InputConfig, Output, OutputConfig, Pull},
     i2c::master::I2c,
     spi::master::Spi,
-    time::RateExtU32,
+    time::Rate,
     timer::systimer::SystemTimer,
     twai::{self, TwaiMode, TwaiRx},
     Async, Blocking,
@@ -55,21 +55,37 @@ async fn main(spawner: Spawner) {
     info!("✓ MCU");
 
     // ------------------------ DISPLAY SET UP ------------------------
-    Output::new(peripherals.GPIO18, gpio::Level::High);
+    Output::new(
+        peripherals.GPIO18,
+        gpio::Level::High,
+        OutputConfig::default(),
+    );
 
     let sck = peripherals.GPIO48;
     let mosi = peripherals.GPIO38;
     let miso = peripherals.GPIO47;
 
-    let cs_output = Output::new(peripherals.GPIO21, gpio::Level::Low);
-    let dc_output = Output::new(peripherals.GPIO10, gpio::Level::Low);
-    let mut led_reset = Output::new(peripherals.GPIO17, gpio::Level::Low);
+    let cs_output = Output::new(
+        peripherals.GPIO21,
+        gpio::Level::Low,
+        OutputConfig::default(),
+    );
+    let dc_output = Output::new(
+        peripherals.GPIO10,
+        gpio::Level::Low,
+        OutputConfig::default(),
+    );
+    let mut led_reset = Output::new(
+        peripherals.GPIO17,
+        gpio::Level::Low,
+        OutputConfig::default(),
+    );
 
     let spi = Spi::new(
         peripherals.SPI2,
         esp_hal::spi::master::Config::default()
             .with_mode(esp_hal::spi::Mode::_0)
-            .with_frequency(20_u32.MHz()),
+            .with_frequency(Rate::from_mhz(20)),
     )
     .unwrap()
     .with_miso(miso)
@@ -98,7 +114,7 @@ async fn main(spawner: Spawner) {
     // Create a new peripheral object with the described wiring and standard
     // I2C clock speed:
     let i2c = I2c::new(peripherals.I2C0, {
-        esp_hal::i2c::master::Config::default().with_frequency(100u32.kHz())
+        esp_hal::i2c::master::Config::default().with_frequency(Rate::from_khz(100))
     })
     .unwrap()
     .with_sda(peripherals.GPIO11)
@@ -106,8 +122,11 @@ async fn main(spawner: Spawner) {
 
     info!("✓ I2C");
 
-    let touch_int = Input::new(peripherals.GPIO6, Pull::Up);
-    let touch_rst = Output::new(peripherals.GPIO7, gpio::Level::Low);
+    let touch_int = Input::new(
+        peripherals.GPIO6,
+        InputConfig::default().with_pull(Pull::Up),
+    );
+    let touch_rst = Output::new(peripherals.GPIO7, gpio::Level::Low, OutputConfig::default());
 
     let mut touchpad = CST816S::new(i2c, touch_int, touch_rst);
     touchpad.setup(&mut delay).unwrap();

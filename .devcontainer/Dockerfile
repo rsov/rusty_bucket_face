@@ -8,15 +8,15 @@ ENV LANG=C.UTF-8
 # Arguments
 ARG CONTAINER_USER=esp
 ARG CONTAINER_GROUP=esp
-ARG ESP_BOARD=all
+ARG ESP_BOARD=esp32s3
 ARG GITHUB_TOKEN
 
 # Install dependencies
 RUN apt-get update \
     && apt-get install -y git curl llvm-dev libclang-dev clang unzip \
     libusb-1.0-0 libssl-dev libudev-dev pkg-config \
-    # Slint server dependencies
-    libxkbcommon-x11-0 libinput10 libgbm-dev \
+    # Slint server dependencies 
+    libxkbcommon-x11-0 libinput10 libgbm-dev build-essential \ 
     && apt-get clean -y && rm -rf /var/lib/apt/lists/* /tmp/library-scripts
 
 # Set users

@@ -15,24 +15,22 @@ path = "./src/main.rs"
 
 # --- ESP ---
 
-esp-hal = { version = "0.23.1", default-features = false, features = [
+esp-hal = { version = "1.0.0-rc.0", default-features = false, features = [
     "defmt",
     "esp32s3",
     "unstable",
+    "rt",
 ] }
 
-esp-hal-embassy = { version = "0.6.0", features = ["esp32s3"] }
+esp-hal-embassy = { version = "0.9.0", features = ["esp32s3", "defmt"] }
 
-esp-alloc = { version = "0.7.0" }
+esp-alloc = { version = "0.8.0" }
 
-xtensa-lx-rt = { version = "0.18.0", features = [
-    "esp32s3",
-    "float-save-restore",
-] }
+xtensa-lx-rt = { version = "0.20.0", features = ["float-save-restore"] }
 
 # --- Debug / loggers ---
 
-defmt = "0.3.10"
+defmt = "1.0.1"
 panic-rtt-target = { version = "0.2.0", features = ["defmt"] }
 rtt-target = { version = "0.6.1", features = ["defmt"] }
 
@@ -50,8 +48,8 @@ embedded-hal-bus = "0.3.0"
 embedded-hal-async = "1.0.0"
 
 embassy-time = { version = "0.4.0", features = ["generic-queue-8"] }
-embassy-futures = { version = "0.1.1", features = ["defmt"] }
-embassy-embedded-hal = { version = "0.3.0", features = ["defmt"] }
+embassy-futures = { version = "0.1.2", features = ["defmt"] }
+embassy-embedded-hal = { version = "0.5.0", features = ["defmt"] }
 embassy-executor = { version = "0.7.0", features = [
     "defmt",
     "task-arena-size-20480",
@@ -60,15 +58,15 @@ embassy-executor = { version = "0.7.0", features = [
 
 # --- App dependencies ---
 
-slint = { version = "1.10.0", default-features = false, features = [
+slint = { version = "1.12.1", default-features = false, features = [
     "compat-1-2",
     "unsafe-single-threaded",
     "libm",
     "renderer-software",
 ] }
 
-static_cell = "2.1.0"
-embassy-sync = "0.6.2"
+static_cell = "2.1.1"
+embassy-sync = "0.7.2"
 embedded-can = "0.4.1"
 
 
@@ -87,4 +85,4 @@ opt-level = 's'
 overflow-checks = false
 
 [build-dependencies]
-slint-build = { version = "1.10.0", features = ["sdf-fonts"] }
+slint-build = { version = "1.12.1", features = ["sdf-fonts"] }
