@@ -16,7 +16,6 @@ use embassy_time::{Duration, Instant, Timer};
 use embedded_can::Frame;
 use embedded_hal_bus::spi::ExclusiveDevice;
 use esp_hal::{
-    Async, Blocking,
     clock::CpuClock,
     delay::Delay,
     gpio::{self, Input, InputConfig, Output, OutputConfig, Pull},
@@ -25,10 +24,11 @@ use esp_hal::{
     time::Rate,
     timer::systimer::SystemTimer,
     twai::{self, TwaiMode, TwaiRx},
+    Async, Blocking,
 };
-use gc9a01::{Gc9a01, SPIDisplayInterface, prelude::*};
+use gc9a01::{prelude::*, Gc9a01, SPIDisplayInterface};
 use panic_rtt_target as _;
-use slint::platform::{PointerEventButton, WindowEvent, software_renderer::MinimalSoftwareWindow};
+use slint::platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton, WindowEvent};
 
 slint::include_modules!();
 esp_bootloader_esp_idf::esp_app_desc!();
