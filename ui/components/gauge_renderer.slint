@@ -1,0 +1,30 @@
+import {  HorizontalBox } from "std-widgets.slint";
+import { GaugeModel } from "../api.slint";
+import { ScreenSize, AppFonts } from "../common.slint";
+
+export component GaugeRender {
+    in property <GaugeModel> gauge;
+
+    height: ScreenSize.height;
+    width: ScreenSize.width;
+
+    HorizontalBox {
+
+        Text {
+            text: gauge.reading;
+            vertical-alignment: center;
+            horizontal-alignment: right;
+            color: white;
+            font-family: AppFonts.gauges-font-name;
+            font-size: 100px;
+            height: 100%;
+        }
+
+        Text {
+            text: gauge.unit;
+            vertical-alignment: center;
+            font-size: 42px;
+            height: 100%;
+        }
+    }
+}

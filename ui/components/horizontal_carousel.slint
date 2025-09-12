@@ -1,0 +1,29 @@
+export component HorizontalCarousel inherits FocusScope {
+    in-out property <int> current-page: 0;
+    in property <int> count: 4;
+    property <length> swipe-padding: 5px;
+
+    sgr := SwipeGestureHandler {
+        handle-swipe-right: current-page > 0;
+        handle-swipe-left: current-page < root.count;
+        swiped => {
+            if self.current-position.x > self.pressed-position.x + root.swipe-padding {
+                current-page -= 1;
+            } else if self.current-position.x < self.pressed-position.x - root.swipe-padding {
+                current-page += 1;
+            }
+        }
+
+        HorizontalLayout {
+            property <length> position: - current-page * root.width;
+            animate position {
+                duration: 200ms;
+                easing: ease-in-out;
+            }
+            property <length> swipe-offset;
+            x: position + swipe-offset;
+
+            @children
+        }
+    }
+}

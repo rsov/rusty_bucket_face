@@ -1,0 +1,14 @@
+import { ScreenSize } from "../common.slint";
+export component DisplayLimits inherits Rectangle {
+    Rectangle {
+        width: ScreenSize.width;
+        height: ScreenSize.height;
+        background: #000;
+
+        border-radius: ScreenSize.height / 2;
+        border-color: #000;
+        border-width: 1px;
+
+        @children
+    }
+}

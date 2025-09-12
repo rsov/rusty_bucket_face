@@ -6,7 +6,7 @@ extern crate alloc;
 mod cst816s;
 mod display_line_buffer_providers;
 
-use alloc::{boxed::Box, rc::Rc};
+use alloc::{boxed::Box, rc::Rc, vec::Vec};
 use core::default::Default;
 use cst816s::CST816S;
 use defmt::info;
@@ -28,7 +28,10 @@ use esp_hal::{
 };
 use gc9a01::{prelude::*, Gc9a01, SPIDisplayInterface};
 use panic_rtt_target as _;
-use slint::platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton, WindowEvent};
+use slint::{
+    platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton, WindowEvent},
+    SharedString, VecModel, Weak,
+};
 
 slint::include_modules!();
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -86,7 +89,7 @@ async fn main(spawner: Spawner) {
         peripherals.SPI2,
         esp_hal::spi::master::Config::default()
             .with_mode(esp_hal::spi::Mode::_0)
-            .with_frequency(Rate::from_mhz(20)),
+            .with_frequency(Rate::from_mhz(40)),
     )
     .unwrap()
     .with_miso(miso)
@@ -225,7 +228,7 @@ async fn touch(
 
     loop {
         if let Some(evt) = touchpad.read_one_touch_event(true).await {
-            info!("Touched {:?}", evt);
+            // info!("Touched {:?}", evt);
             let position = slint::LogicalPosition::new(
                 (WINDOW_WIDTH - evt.x) as _,
                 (WINDOW_HEIGHT - evt.y) as _,
@@ -249,12 +252,20 @@ async fn touch(
 }
 
 #[embassy_executor::task]
-async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: slint::Weak<AppWindow>) -> ! {
+async fn receiver(mut rx: TwaiRx<'static, Async>, ui_handle: Weak<AppWindow>) -> ! {
     info!("✓ CAN task");
 
-    if let Some(app_window) = app_window.upgrade() {
-        app_window.set_o2_lambda_reading(0.5);
-    }
+    let mut gauges: Vec<GaugeModel> = Vec::new();
+
+    gauges.push(GaugeModel {
+        reading: "0.0".into(),
+        unit: "L".into(),
+    });
+
+    gauges.push(GaugeModel {
+        reading: "0".into(),
+        unit: "kPa".into(),
+    });
 
     loop {
         let frame = rx.receive_async().await;
@@ -271,9 +282,8 @@ async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: slint::Weak<AppWin
                     // TODO: Skill issue, there's a better way to do this
                     let raw_value: u16 = ((frame.data()[0] as u16) << 8) | (frame.data()[1] as u16);
                     let lambda_1 = raw_value as f32 / 1000.0;
-                    if let Some(app_window) = app_window.upgrade() {
-                        app_window.set_o2_lambda_reading(lambda_1);
-                    }
+
+                    gauges[0].reading = SharedString::from(alloc::format!("{:.4}", lambda_1));
                 }
 
                 let boost_id = twai::Id::from(twai::StandardId::new(0x360).unwrap());
@@ -281,15 +291,22 @@ async fn receiver(mut rx: TwaiRx<'static, Async>, app_window: slint::Weak<AppWin
                     // TODO: Skill issue, there's a better way to do this
                     let raw_value: u16 = ((frame.data()[2] as u16) << 8) | (frame.data()[3] as u16);
                     let boost = raw_value as i32 / 10;
-                    if let Some(app_window) = app_window.upgrade() {
-                        app_window.set_manifold_pressure_reading(boost);
-                    }
+                    gauges[1].reading = SharedString::from(alloc::format!("{:.2}", boost));
                 }
             }
             Err(e) => {
                 info!("[CAN] Error: {:?}", e);
             }
         }
+
+        let gauges_to_set = gauges.clone();
+        ui_handle
+            .upgrade_in_event_loop(move |handle| {
+                handle
+                    .global::<Api>()
+                    .set_gauges(VecModel::from_slice(&gauges_to_set));
+            })
+            .ok();
     }
 }
 

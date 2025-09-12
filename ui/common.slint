@@ -2,80 +2,10 @@ import "./assets/Open_24_Display_St.ttf";
 
 export global AppFonts {
     out property <length> gauges-font-size: 10pt;
-
     out property <string> gauges-font-name: "Open 24 Display St";
 }
 
-export component DisplayLimits inherits Rectangle {
-    Rectangle {
-        width: 240px;
-        height: 240px;
-        background: #000;
-
-        border-radius: 240px / 2;
-        border-color: #000;
-        border-width: 1px;
-
-        @children
-    }
-}
-
-// Can't use this because Path is not supported in software renderer
-// See: https://github.com/slint-ui/slint/issues/4178
-export component FullGauge {
-    in property <float> progress;
-    in property <string> unit;
-    in property <string> measurement;
-    in property <length> stroke-width <=> path.stroke-width;
-    in property <brush> stroke <=> path.stroke;
-
-    Rectangle {
-        width: 100%;
-        height: 100%;
-
-        path := Path {
-            private property <float> radius: min(self.viewbox-width, self.viewbox-height) / 2 + 10;
-            private property <float> start-x: self.viewbox-width / 2;
-            private property <float> start-y: self.viewbox-height / 2;
-
-            private property <float> mod: 30;
-            // min is a workaround to get filled circle by 1.0
-            private property <float> progress: min(0.9999, root.progress);
-
-            viewbox-width: 100;
-            viewbox-height: 100;
-            width: 100%;
-            height: 100%;
-
-            MoveTo {
-                x: start-x + radius * sin(360deg);
-                y: start-y + radius * cos(360deg);
-            }
-
-            ArcTo {
-                radius-x: path.radius;
-                radius-y: path.radius;
-                x: start-x + path.radius * sin(-(path.progress) * 270deg);
-                y: start-y + path.radius * cos(-(path.progress) * 270deg);
-                sweep: path.progress > 0;
-                large-arc: path.progress > 0.7;
-            }
-        }
-
-        Text {
-            text: measurement;
-            vertical-alignment: bottom;
-            horizontal-alignment: right;
-            font-family: AppFonts.gauges-font-name;
-            font-size: 100px;
-        }
-
-        Text {
-            text: unit;
-            font-size: 56px;
-            horizontal-alignment: right;
-            x: 150px;
-            y: 130px;
-        }
-    }
+export global ScreenSize {
+    out property <length> height: 240px;
+    out property <length> width: 240px;
 }

@@ -1,0 +1,19 @@
+export enum Pages { gauges }
+
+export struct GaugeModel {
+    reading: string,
+    unit: string,
+ }
+
+export global Api {
+    in-out property <Pages> current-page: Pages.gauges;
+
+    in-out property <[GaugeModel]> gauges: [
+        { reading: 10.0, unit: "C" },
+        { reading: 1.0, unit: "kPa" },
+        { reading: 13.0, unit: "mpg" },
+        { reading: 15.0, unit: "C" },
+        { reading: 11.0, unit: "F" },
+        { reading: 31.0, unit: "psi" },
+    ];
+}

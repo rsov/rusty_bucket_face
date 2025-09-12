@@ -1,0 +1,17 @@
+import { Api, Pages } from "api.slint";
+import { DisplayLimits } from "./components/display_limits.slint";
+import { GaugePage} from "./pages/gauge_page.slint";
+import { ScreenSize } from "common.slint";
+
+export { Api }
+
+// Watch for SVG renderer for more flexibility: https://github.com/slint-ui/slint/issues/4178 
+
+export component AppWindow inherits Window {
+    width: ScreenSize.width;
+    height: ScreenSize.height;
+
+    DisplayLimits {
+        if(Api.current-page == Pages.gauges): GaugePage { }
+    }
+}

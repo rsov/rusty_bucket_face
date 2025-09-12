@@ -3,7 +3,7 @@ fn main() {
     println!("cargo:rustc-link-arg=-Tdefmt.x");
 
     slint_build::compile_with_config(
-        "ui/main.slint",
+        "ui/app.slint",
         slint_build::CompilerConfiguration::new()
             .with_sdf_fonts(true)
             .embed_resources(slint_build::EmbedResourcesKind::EmbedForSoftwareRenderer)

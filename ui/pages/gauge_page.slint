@@ -1,0 +1,45 @@
+import { ListView, VerticalBox } from "std-widgets.slint";
+import { Api } from "../api.slint";
+import { ScreenSize } from "../common.slint";
+import { GaugeRender } from "../components/gauge_renderer.slint";
+
+export component GaugePage {
+    height: ScreenSize.height;
+    width: ScreenSize.width;
+
+    property <length> lastItemHeight: ((Api.gauges.length - 1) * ScreenSize.height) * -1;
+
+    VerticalBox {
+        TouchArea {
+            vertical-stretch: 1;
+            clicked => {
+                if (list.viewport-y == 0) {
+                    list.viewport-y = lastItemHeight;
+                } else {
+                    list.viewport-y += ScreenSize.height;
+                }
+            }
+        }
+
+        TouchArea {
+            vertical-stretch: 1;
+            clicked => {
+                if (lastItemHeight >= list.viewport-y) {
+                    list.viewport-y = 0px;
+                } else {
+                    list.viewport-y -= ScreenSize.height;
+                }
+            }
+        }
+    }
+
+    list := ListView {
+        padding: 0;
+        horizontal-scrollbar-policy: always-off;
+        vertical-scrollbar-policy: always-off;
+
+        for gauge in Api.gauges: GaugeRender {
+            gauge: gauge;
+        }
+    }
+}
