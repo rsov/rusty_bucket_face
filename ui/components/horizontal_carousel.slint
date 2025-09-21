@@ -2,15 +2,20 @@ export component HorizontalCarousel inherits FocusScope {
     in-out property <int> current-page: 0;
     in property <int> count: 4;
     property <length> swipe-padding: 5px;
+    callback onNextPage(int);
+    callback onPrevPage(int);
 
     sgr := SwipeGestureHandler {
         handle-swipe-right: current-page > 0;
         handle-swipe-left: current-page < root.count;
+
         swiped => {
             if self.current-position.x > self.pressed-position.x + root.swipe-padding {
                 current-page -= 1;
+                root.onPrevPage(current-page);
             } else if self.current-position.x < self.pressed-position.x - root.swipe-padding {
                 current-page += 1;
+                root.onNextPage(current-page)
             }
         }
 

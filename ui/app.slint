@@ -1,7 +1,10 @@
-import { Api, Pages } from "api.slint";
+import { Api, Pages } from "./api.slint";
 import { DisplayLimits } from "./components/display_limits.slint";
 import { GaugePage} from "./pages/gauge_page.slint";
-import { ScreenSize } from "common.slint";
+import { ScreenSize } from "./common.slint";
+import { SignalsPage } from "./pages/signals_page.slint";
+import { HorizontalCarousel } from "./components/horizontal_carousel.slint";
+
 
 export { Api }
 
@@ -12,6 +15,12 @@ export component AppWindow inherits Window {
     height: ScreenSize.height;
 
     DisplayLimits {
-        if(Api.current-page == Pages.gauges): GaugePage { }
+        HorizontalCarousel {
+            count: 1;
+
+            GaugePage { }
+
+            SignalsPage { }
+        }
     }
 }

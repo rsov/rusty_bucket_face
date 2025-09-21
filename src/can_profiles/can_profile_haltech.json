@@ -1,0 +1,147 @@
+{
+    "name": "Haltech CAN",
+    "standard_id": true,
+    "messages": [
+        {
+            "can_id": "0x360",
+            "signals": [
+                {
+                    "name": "RPM",
+                    "mask": "11000000",
+                    "signed": false,
+                    "units": "RPM"
+                },
+                {
+                    "name": "Manifold Pressure",
+                    "mask": "00110000",
+                    "signed": false,
+                    "units": "kPa",
+                    "conversion": "x/10"
+                },
+                {
+                    "name": "Throttle Position",
+                    "mask": "00001100",
+                    "signed": false,
+                    "units": "%",
+                    "conversion": "x/10"
+                },
+                {
+                    "name": "Coolant pressure",
+                    "mask": "00000011",
+                    "signed": false,
+                    "units": "kPa",
+                    "conversion": "x/10"
+                }
+            ]
+        },
+        {
+            "can_id": "0x361",
+            "signals": [
+                {
+                    "name": "Fuel Pressure",
+                    "mask": "11000000",
+                    "signed": false,
+                    "units": "kPa",
+                    "conversion": "x/10 - 101.3"
+                },
+                {
+                    "name": "Oil Pressure",
+                    "mask": "00110000",
+                    "signed": false,
+                    "units": "kPa",
+                    "conversion": "x/10 - 101.3"
+                },
+                {
+                    "name": "Engine Demand",
+                    "mask": "00001100",
+                    "signed": false,
+                    "units": "%",
+                    "conversion": "x/10"
+                },
+                {
+                    "name": "Wastegate Pressure",
+                    "mask": "0000000011",
+                    "signed": false,
+                    "units": "kPa",
+                    "conversion": "x/10 - 101.3"
+                }
+            ]
+        },
+        {
+            "can_id": "0x376",
+            "signals": [
+                {
+                    "name": "Ambient Air Temperature",
+                    "mask": "11000000",
+                    "signed": false,
+                    "units": "K",
+                    "conversion": "x/10"
+                }
+            ]
+        },
+        {
+            "can_id": "0x3E0",
+            "signals": [
+                {
+                    "name": "Coolant Temperature",
+                    "mask": "11000000",
+                    "signed": false,
+                    "units": "K",
+                    "conversion": "x/10"
+                },
+                {
+                    "name": "Air Temperature",
+                    "mask": "00110000",
+                    "signed": false,
+                    "units": "K",
+                    "conversion": "x/10"
+                },
+                {
+                    "name": "Fuel Temperature",
+                    "mask": "00001100",
+                    "signed": false,
+                    "units": "K",
+                    "conversion": "x/10"
+                },
+                {
+                    "name": "Oil Temperature",
+                    "mask": "00000011",
+                    "signed": false,
+                    "units": "K",
+                    "conversion": "x/10"
+                }
+            ]
+        },
+        {
+            "can_id": "0x470",
+            "signals": [
+                {
+                    "name": "Wideband Overall",
+                    "mask": "11000000",
+                    "signed": false,
+                    "units": "λ",
+                    "conversion": "x/1000"
+                }
+            ]
+        },
+        {
+            "can_id": "0x3E4",
+            "signals": [
+                {
+                    "name": "Engine Light",
+                    "mask": "00000010",
+                    "bit": 7,
+                    "signed": false,
+                    "units": "boolean"
+                },
+                {
+                    "name": "Battery Light",
+                    "mask": "00000010",
+                    "bit": 6,
+                    "signed": false,
+                    "units": "boolean"
+                }
+            ]
+        }
+    ]
+}

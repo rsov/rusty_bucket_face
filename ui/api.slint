@@ -1,12 +1,24 @@
-export enum Pages { gauges }
+export enum Pages { gauges, signals }
 
 export struct GaugeModel {
     reading: string,
     unit: string,
  }
 
+ export struct SignalModel {
+    name: string,
+}
+
+
 export global Api {
     in-out property <Pages> current-page: Pages.gauges;
+
+    in-out property <[SignalModel]> signals: [
+        { name: "RPM" },
+        { name: "Oil Pressure" },
+        { name: "Coolant Temperature" },
+        { name: "Wideband Overall" }
+    ];
 
     in-out property <[GaugeModel]> gauges: [
         { reading: 10.0, unit: "C" },

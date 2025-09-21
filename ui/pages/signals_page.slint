@@ -1,0 +1,20 @@
+import { ListView, VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Api } from "../api.slint";
+import { ScreenSize, AppFonts } from "../common.slint";
+import { GaugeRender } from "../components/gauge_renderer.slint";
+
+export component SignalsPage {
+    height: ScreenSize.height;
+    width: ScreenSize.width;
+
+    ListView {
+        for item[i] in Api.signals: HorizontalBox {
+            padding-top: 24px;
+            padding-bottom: 24px;
+            Text {
+                text: item.name;
+                font-size: 14pt;
+            }
+        }
+    }
+}

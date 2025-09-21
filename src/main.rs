@@ -3,6 +3,7 @@
 
 extern crate alloc;
 
+mod can_messages;
 mod cst816s;
 mod display_line_buffer_providers;
 
@@ -32,6 +33,8 @@ use slint::{
     platform::{software_renderer::MinimalSoftwareWindow, PointerEventButton, WindowEvent},
     SharedString, VecModel, Weak,
 };
+
+use crate::can_messages::load_signals_to_ui;
 
 slint::include_modules!();
 esp_bootloader_esp_idf::esp_app_desc!();
@@ -200,7 +203,8 @@ async fn main(spawner: Spawner) {
     info!("✓ Main Loop");
 
     spawner.spawn(touch(touchpad, window.clone())).ok();
-    spawner.spawn(receiver(rx, ui_handle)).ok();
+    spawner.spawn(receiver(rx, ui_handle.clone())).ok();
+    spawner.spawn(load_signals_to_ui(ui_handle.clone())).ok();
 
     loop {
         slint::platform::update_timers_and_animations();
@@ -259,13 +263,22 @@ async fn receiver(mut rx: TwaiRx<'static, Async>, ui_handle: Weak<AppWindow>) ->
 
     gauges.push(GaugeModel {
         reading: "0.0".into(),
-        unit: "L".into(),
+        unit: "λ".into(),
     });
 
     gauges.push(GaugeModel {
         reading: "0".into(),
         unit: "kPa".into(),
     });
+
+    let gauges_to_set = gauges.clone();
+    ui_handle
+        .upgrade()
+        .unwrap()
+        .global::<Api>()
+        .set_gauges(VecModel::from_slice(&gauges_to_set));
+
+    info!("✓ Gauges set");
 
     loop {
         let frame = rx.receive_async().await;
