@@ -37,12 +37,11 @@ use slint::{
 use crate::can_messages::load_signals_to_ui;
 
 slint::include_modules!();
-esp_bootloader_esp_idf::esp_app_desc!();
 
 const WINDOW_WIDTH: i32 = 240;
 const WINDOW_HEIGHT: i32 = 240;
 
-#[esp_hal_embassy::main]
+#[esp_rtos::main]
 async fn main(spawner: Spawner) {
     // ------------------------ MCU SET UP ------------------------
     rtt_target::rtt_init_defmt!();
@@ -55,7 +54,7 @@ async fn main(spawner: Spawner) {
     esp_alloc::heap_allocator!(size: 72 * 1024);
 
     let timer0 = SystemTimer::new(peripherals.SYSTIMER);
-    esp_hal_embassy::init(timer0.alarm0);
+    esp_rtos::start(timer0.alarm0);
 
     let mut delay = Delay::new();
 
