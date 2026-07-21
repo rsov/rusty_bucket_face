@@ -21,6 +21,7 @@ use esp_hal::{
     delay::Delay,
     gpio::{self, Input, InputConfig, Output, OutputConfig, Pull},
     i2c::master::I2c,
+    interrupt::software::SoftwareInterruptControl,
     spi::master::Spi,
     time::Rate,
     timer::systimer::SystemTimer,
@@ -54,7 +55,8 @@ async fn main(spawner: Spawner) {
     esp_alloc::heap_allocator!(size: 72 * 1024);
 
     let timer0 = SystemTimer::new(peripherals.SYSTIMER);
-    esp_rtos::start(timer0.alarm0);
+    let sw_int = SoftwareInterruptControl::new(peripherals.SW_INTERRUPT);
+    esp_rtos::start(timer0.alarm0, sw_int.software_interrupt0);
 
     let mut delay = Delay::new();
 
@@ -201,9 +203,9 @@ async fn main(spawner: Spawner) {
 
     info!("✓ Main Loop");
 
-    spawner.spawn(touch(touchpad, window.clone())).ok();
-    spawner.spawn(receiver(rx, ui_handle.clone())).ok();
-    spawner.spawn(load_signals_to_ui(ui_handle.clone())).ok();
+    spawner.spawn(touch(touchpad, window.clone()).unwrap());
+    spawner.spawn(receiver(rx, ui_handle.clone()).unwrap());
+    spawner.spawn(load_signals_to_ui(ui_handle.clone()).unwrap());
 
     loop {
         slint::platform::update_timers_and_animations();
